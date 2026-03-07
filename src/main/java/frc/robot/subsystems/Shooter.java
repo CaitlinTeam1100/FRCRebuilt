@@ -4,11 +4,13 @@ import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.ClosedLoopSlot;
+import com.revrobotics.spark.SparkBase;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkFlex;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
+import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
@@ -30,15 +32,15 @@ import frc.robot.utils.FieldUtils;
 import frc.robot.utils.sensing.SparkCurrentLimitDetector;
 import frc.robot.utils.sensing.SparkCurrentLimitDetector.HardLimitDirection;
 
-public class Shooter extends SubsystemBase{
+public class Shooter extends SubsystemBase {
     private static Shooter m_Shooter = null;
 
     // Flywheel
     private final boolean m_flywheelEnabled;
-    private SparkFlex m_flywheelLeftMotor;
-    private SparkFlex m_rightFlywheelMotor;
+    private SparkBase m_flywheelLeftMotor;
+    private SparkBase m_flywheelRightMotor;
 
-    private SparkFlexConfig m_flywheelLeftConfig;
+    private SparkBaseConfig m_flywheelLeftConfig;
 
     private double m_flywheelP;
     private double m_flywheelI;
@@ -47,9 +49,11 @@ public class Shooter extends SubsystemBase{
     private TDNumber m_TDflywheelI;
     private TDNumber m_TDflywheelD;
 
-    private TDNumber m_TDflywheelKS;
-    private TDNumber m_TDflywheelKV;
-    private TDNumber m_TDflywheelKA;
+    private TDNumber m_TDflywheelKs;
+    private TDNumber m_TDflywheelKv;
+    private TDNumber m_TDflywheelKa;
+
+    private boolean m_tuneFlywheel;
 
     private SimpleMotorFeedforward m_flywheelFF;
 
@@ -59,10 +63,12 @@ public class Shooter extends SubsystemBase{
 
     // Turret
     private final boolean m_turretEnabled;
-  	private boolean m_tuneTurret;
-    private SparkFlex m_turretMotor;
 
-    private SparkFlexConfig m_turretConfig;
+    private boolean m_tuneTurret;
+
+    private SparkBase m_turretMotor;
+
+    private SparkBaseConfig m_turretConfig;
 
     private double m_turretP;
     private double m_turretI;
@@ -88,23 +94,25 @@ public class Shooter extends SubsystemBase{
     private TDNumber m_TDturretProfilePosition;
     private TDNumber m_TDturretMeasuredCurrent;
 
-    //Hood
+    // Hood
     private final boolean m_hoodEnabled;
+
     private boolean m_tuneHood;
-    private SparkMax m_hoodAngleMotor;
-    private SparkMaxConfig m_hoodConfig;
+
+    private SparkBase m_hoodMotor;
+    private SparkBaseConfig m_hoodConfig;
 
     private RelativeEncoder m_hoodEncoder;
-    
-    private double m_hoodKG;
-    private double m_hoodKS;
-    private double m_hoodKV;
+
+    private double m_hoodKg;
+    private double m_hoodKs;
+    private double m_hoodKv;
     private double m_hoodP;
     private double m_hoodI;
     private double m_hoodD;
-    private TDNumber m_TDhoodKG;
-    private TDNumber m_TDhoodKS;
-    private TDNumber m_TDhoodKV;
+    private TDNumber m_TDhoodKg;
+    private TDNumber m_TDhoodKs;
+    private TDNumber m_TDhoodKv;
     private TDNumber m_TDhoodP;
     private TDNumber m_TDhoodI;
     private TDNumber m_TDhoodD;
@@ -120,17 +128,18 @@ public class Shooter extends SubsystemBase{
     private TDNumber m_TDHoodMotorCurrent;
     private TDNumber m_TDHoodPosition;
     private TDNumber m_TDHoodProfilePosition;
+    private TDNumber m_TDhoodTargetPosition;
 
     private Drive m_Drive;
 
-	  // Chimney
+    // Chimney
     private final boolean m_chimneyEnabled;
-	  private SparkFlex m_chimneyMotor;
-	  private SparkFlexConfig m_chimneyConfig;
+    private SparkBase m_chimneyMotor;
+    private SparkBaseConfig m_chimneyConfig;
 
-	  private TDNumber m_TDchimneyMeasuredCurrent;
+    private TDNumber m_TDchimneyMeasuredCurrent;
 
-    private Shooter(){
+    private Shooter() {
         super("Shooter");
 
         m_flywheelEnabled = cfgBool("flywheelEnabled");
@@ -138,13 +147,17 @@ public class Shooter extends SubsystemBase{
         m_hoodEnabled = cfgBool("hoodEnabled");
         m_chimneyEnabled = cfgBool("chimneyEnabled");
 
-        if (m_flywheelEnabled) setupFlywheel();
+        if (m_flywheelEnabled)
+            setupFlywheel();
 
-        if (m_turretEnabled) setupTurret();
-        
-        if (m_hoodEnabled) setupHood();
+        if (m_turretEnabled)
+            setupTurret();
 
-		    if (m_chimneyEnabled) setupChimney();
+        if (m_hoodEnabled)
+            setupHood();
+
+        if (m_chimneyEnabled)
+            setupChimney();
     }
 
     public static Shooter getInstance() {
@@ -152,11 +165,16 @@ public class Shooter extends SubsystemBase{
             m_Shooter = new Shooter();
         }
         return m_Shooter;
-    } 
+    }
 
-    public void setupFlywheel() {
-        m_flywheelLeftMotor = new SparkFlex(cfgInt("leftFlywheelCANid"), MotorType.kBrushless);
-        m_rightFlywheelMotor = new SparkFlex(cfgInt("rightFlywheelCANid"), MotorType.kBrushless);
+    private void setupFlywheel() {
+        m_tuneFlywheel = cfgBool("tuneFlywheel");
+
+        var flywheelLeftMotorConfig = config().getMotorController("flywheel1");
+        var flywheelRightMotorConfig = config().getMotorController("flywheel2");
+
+        m_flywheelLeftMotor = flywheelLeftMotorConfig.m_controller;
+        m_flywheelRightMotor = flywheelRightMotorConfig.m_controller;
 
         m_TDflywheelP = new TDNumber(this, "Flywheel", "P");
         m_TDflywheelI = new TDNumber(this, "Flywheel", "I");
@@ -168,25 +186,28 @@ public class Shooter extends SubsystemBase{
         m_flywheelI = m_TDflywheelI.get();
         m_flywheelD = m_TDflywheelD.get();
 
-        m_TDflywheelKS = new TDNumber(this, "Flywheel", "Ks");
-        m_TDflywheelKV = new TDNumber(this, "Flywheel", "Kv");
-        m_TDflywheelKA = new TDNumber(this, "Flywheel", "Ka");
-        m_TDflywheelKS.set(cfgDbl("flywheelKS"));
-        m_TDflywheelKV.set(cfgDbl("flywheelKV"));
-        m_TDflywheelKA.set(cfgDbl("flywheelKA"));
+        m_TDflywheelKs = new TDNumber(this, "Flywheel", "Ks");
+        m_TDflywheelKv = new TDNumber(this, "Flywheel", "Kv");
+        m_TDflywheelKa = new TDNumber(this, "Flywheel", "Ka");
+        m_TDflywheelKs.set(cfgDbl("flywheelKs"));
+        m_TDflywheelKv.set(cfgDbl("flywheelKv"));
+        m_TDflywheelKa.set(cfgDbl("flywheelKa"));
 
-        m_flywheelLeftConfig = new SparkFlexConfig();
+        m_flywheelLeftConfig = flywheelLeftMotorConfig.m_config;
         m_flywheelLeftConfig.closedLoop.pid(m_flywheelP, m_flywheelI, m_flywheelD);
         m_flywheelLeftConfig.encoder.velocityConversionFactor(cfgDbl("flywheelVelocityFactor"));
 
-        SparkFlexConfig rightConfig = new SparkFlexConfig();
-        rightConfig.follow(cfgInt("leftFlywheelCANid"), true);
-        m_rightFlywheelMotor.configure(rightConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+        m_flywheelLeftMotor.configure(m_flywheelLeftConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+        SparkBaseConfig flywheelRightConfig = flywheelRightMotorConfig.m_config;
+        flywheelRightConfig.follow(m_flywheelLeftMotor, true);
+        m_flywheelRightMotor.configure(flywheelRightConfig, ResetMode.kResetSafeParameters,
+                PersistMode.kPersistParameters);
 
         m_flywheelFF = new SimpleMotorFeedforward(
-            m_TDflywheelKV.get(), m_TDflywheelKS.get(), m_TDflywheelKA.get());
+                m_TDflywheelKs.get(), m_TDflywheelKv.get(), m_TDflywheelKa.get());
 
-		    m_turretTolerance = cfgDbl("turretTolerance");
+        m_turretTolerance = cfgDbl("turretTolerance");
 
         m_TDflywheelVelocity = new TDNumber(this, "Flywheel", "Target Velocity");
         m_TDflywheelVelocity.set(0);
@@ -195,9 +216,11 @@ public class Shooter extends SubsystemBase{
         m_TDflywheelMeasuredCurrent = new TDNumber(this, "Flywheel", "Measured Current");
     }
 
-    public void setupTurret() {
+    private void setupTurret() {
         m_tuneTurret = cfgBool("tuneTurret");
-        m_turretMotor = new SparkFlex(cfgInt("turretRotationCANid"), MotorType.kBrushless);
+
+        var turretMotorConfig = config().getMotorController("turretRotation");
+        m_turretMotor = turretMotorConfig.m_controller;
 
         m_TDturretP = new TDNumber(this, "Turret", "P");
         m_TDturretI = new TDNumber(this, "Turret", "I");
@@ -210,15 +233,17 @@ public class Shooter extends SubsystemBase{
         m_turretI = m_TDturretI.get();
         m_turretD = m_TDturretD.get();
 
-        m_turretConfig = new SparkFlexConfig();
-        m_turretConfig.closedLoop.pid(m_turretP, m_turretI, m_turretD);
+        m_turretConfig = turretMotorConfig.m_config;
+        m_turretConfig.inverted(true);
         m_turretConfig.idleMode(IdleMode.kBrake);
         m_turretConfig.encoder.positionConversionFactor(Constants.ShooterConstants.kTurretPositionFactor);
+        m_turretConfig.closedLoop.pid(m_turretP, m_turretI, m_turretD);
         m_turretConfig.closedLoop.positionWrappingEnabled(false);
 
         m_turretMotor.configure(m_turretConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
-        Constraints constraints = new Constraints(Constants.ShooterConstants.kTurretMaxVelocity, Constants.ShooterConstants.kTurretMaxAccel);
+        Constraints constraints = new Constraints(Constants.ShooterConstants.kTurretMaxVelocity,
+                Constants.ShooterConstants.kTurretMaxAccel);
         m_turretProfile = new TrapezoidProfile(constraints);
 
         m_TDturretKs = new TDNumber(this, "Turret", "Ks");
@@ -229,7 +254,7 @@ public class Shooter extends SubsystemBase{
         m_TDturretKv.set(cfgDbl("turretKv"));
         m_TDturretKa.set(cfgDbl("turretKa"));
 
-		    m_turretFF = new SimpleMotorFeedforward(m_TDturretKs.get(), m_TDturretKv.get(), m_TDturretKa.get());
+        m_turretFF = new SimpleMotorFeedforward(m_TDturretKs.get(), m_TDturretKv.get(), m_TDturretKa.get());
 
         m_TDturretTargetAngle = new TDNumber(this, "Turret", "Target Angle");
         m_TDturretSpeed = new TDNumber(this, "Turret", "Turret Speed");
@@ -238,76 +263,81 @@ public class Shooter extends SubsystemBase{
         m_TDturretMeasuredCurrent = new TDNumber(this, "Turret", "Measured Current");
         m_TDturretProfilePosition = new TDNumber(this, "Turret", "Profile Position");
 
-        double initPosition = m_turretMotor.getEncoder().getPosition();
+        double initPosition = 0;
         m_turretSetpoint = new TrapezoidProfile.State(initPosition, 0.0);
         m_turretState = new TrapezoidProfile.State(initPosition, 0.0);
 
         m_Drive = Drive.getInstance();
     }
 
-    public void setupHood() {
+    private void setupHood() {
         m_tuneHood = cfgBool("tuneHood");
-        m_hoodAngleMotor = new SparkMax(cfgInt("hoodAngleMotorCANid"), MotorType.kBrushless);
 
-        m_TDhoodKG = new TDNumber(this, "Hood", "kG");
-        m_TDhoodKS = new TDNumber(this, "Hood", "kS");
-        m_TDhoodKV = new TDNumber(this, "Hood", "kV");
+        var hoodMotorConfig = config().getMotorController("hood");
+        
+        m_hoodMotor = hoodMotorConfig.m_controller;
+
+        m_TDhoodKg = new TDNumber(this, "Hood", "Kg");
+        m_TDhoodKs = new TDNumber(this, "Hood", "Ks");
+        m_TDhoodKv = new TDNumber(this, "Hood", "Kv");
         m_TDhoodP = new TDNumber(this, "Hood", "P");
         m_TDhoodI = new TDNumber(this, "Hood", "I");
         m_TDhoodD = new TDNumber(this, "Hood", "D");
 
-        m_TDhoodKG.set(cfgDbl("hoodkG"));
-        m_TDhoodKS.set(cfgDbl("hoodkS"));
-        m_TDhoodKV.set(cfgDbl("hoodkV"));
-        m_TDhoodP.set(cfgDbl("hoodkP"));
-        m_TDhoodI.set(cfgDbl("hoodkI"));
-        m_TDhoodD.set(cfgDbl("hoodkD"));
-        
-        m_hoodKG = m_TDhoodKG.get();
-        m_hoodKS = m_TDhoodKS.get();
-        m_hoodKV = m_TDhoodKV.get();
+        m_TDhoodKg.set(cfgDbl("hoodKg"));
+        m_TDhoodKs.set(cfgDbl("hoodKs"));
+        m_TDhoodKv.set(cfgDbl("hoodKv"));
+        m_TDhoodP.set(cfgDbl("hoodP"));
+        m_TDhoodI.set(cfgDbl("hoodI"));
+        m_TDhoodD.set(cfgDbl("hoodD"));
+
+        m_hoodKg = m_TDhoodKg.get();
+        m_hoodKs = m_TDhoodKs.get();
+        m_hoodKv = m_TDhoodKv.get();
         m_hoodP = m_TDhoodP.get();
         m_hoodI = m_TDhoodI.get();
         m_hoodD = m_TDhoodD.get();
 
-        m_hoodConfig = new SparkMaxConfig();
+        m_hoodConfig = hoodMotorConfig.m_config;
         m_hoodConfig.idleMode(IdleMode.kBrake);
         m_hoodConfig.closedLoop
                 .pid(m_hoodP, m_hoodI, m_hoodD)
                 .positionWrappingEnabled(false);
         m_hoodConfig.encoder
-            .positionConversionFactor(Constants.ShooterConstants.kHoodPositionConversion)
-            .velocityConversionFactor(Constants.ShooterConstants.kHoodVelocityConversion);
+                .positionConversionFactor(Constants.ShooterConstants.kHoodPositionConversion)
+                .velocityConversionFactor(Constants.ShooterConstants.kHoodVelocityConversion);
 
-        m_hoodAngleMotor.configure(m_hoodConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+        m_hoodMotor.configure(m_hoodConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
-        m_hoodEncoder = m_hoodAngleMotor.getEncoder();
-        m_hoodClosedLoopController = m_hoodAngleMotor.getClosedLoopController();
+        m_hoodEncoder = m_hoodMotor.getEncoder();
+        m_hoodClosedLoopController = m_hoodMotor.getClosedLoopController();
 
         m_hoodLimiter = new SparkCurrentLimitDetector(
-            m_hoodAngleMotor, 
-            Constants.ShooterConstants.kHoodStallDetectCurrent, 
-            Constants.ShooterConstants.kHoodStallSpeedTolerance);
+                m_hoodMotor,
+                Constants.ShooterConstants.kHoodStallDetectCurrent,
+                Constants.ShooterConstants.kHoodStallSpeedTolerance);
 
         TrapezoidProfile.Constraints hoodConstraints = new TrapezoidProfile.Constraints(
-            Constants.ShooterConstants.kHoodMaxVelocityDegreesPerSec, 
-            Constants.ShooterConstants.kHoodMaxAcceleration);
+                Constants.ShooterConstants.kHoodMaxVelocityDegreesPerSec,
+                Constants.ShooterConstants.kHoodMaxAcceleration);
         m_hoodProfile = new TrapezoidProfile(hoodConstraints);
         m_hoodState = new TrapezoidProfile.State(m_hoodEncoder.getPosition(), 0.0);
         m_hoodSetpoint = new TrapezoidProfile.State(m_hoodEncoder.getPosition(), 0.0);
-        m_hoodFF = new ElevatorFeedforward(m_hoodKS, m_hoodKG, m_hoodKV);
+        m_hoodFF = new ElevatorFeedforward(m_hoodKs, m_hoodKg, m_hoodKv);
 
         m_TDHoodMotorCurrent = new TDNumber(this, "Hood", "Motor Current");
         m_TDHoodPosition = new TDNumber(this, "Hood", "Position");
         m_TDHoodProfilePosition = new TDNumber(this, "Hood", "Profile Position");
+        m_TDhoodTargetPosition = new TDNumber(this, "Hood", "Hood Target Position");
     }
 
-    public void setupChimney() {
-        m_chimneyMotor = new SparkFlex(cfgInt("chimneyMotorCANid"), MotorType.kBrushless);
-        m_chimneyConfig = new SparkFlexConfig();
+    private void setupChimney() {
+        var chimneyMotorConfig = config().getMotorController("chimney");
+        m_chimneyMotor = chimneyMotorConfig.m_controller;
+        m_chimneyConfig = chimneyMotorConfig.m_config;
         m_chimneyConfig
-          .idleMode(IdleMode.kCoast)
-          .smartCurrentLimit(cfgInt("chimneyRollerStallLimit"), cfgInt("chimneyRollerFreeLimit"));
+                .idleMode(IdleMode.kCoast)
+                .smartCurrentLimit(0, 0);
 
         m_chimneyMotor.configure(m_chimneyConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
@@ -316,7 +346,9 @@ public class Shooter extends SubsystemBase{
 
     /**
      * Sets a target velocity for the flywheel.
-     * @param rpm Velocity to approach in RPM.
+     * 
+     * @param rpm
+     *            Velocity to approach in RPM.
      */
     public void setFlywheelTarget(double rpm) {
         m_TDflywheelVelocity.set(rpm);
@@ -324,19 +356,25 @@ public class Shooter extends SubsystemBase{
 
     /**
      * Sets a target position for the hood.
-     * @param angle Position to approach in radians.
+     * 
+     * @param angle
+     *            Position to approach in radians.
      */
     public void setHoodTarget(double angle) {
-        double clampedAngle = MathUtil.clamp(angle, 
-            Constants.ShooterConstants.kHoodMinAngle, 
-            Constants.ShooterConstants.kHoodMaxAngle);
+        double clampedAngle = MathUtil.clamp(angle,
+                Constants.ShooterConstants.kHoodMinAngle,
+                Constants.ShooterConstants.kHoodMaxAngle);
         m_hoodSetpoint = new TrapezoidProfile.State(clampedAngle, 0.0);
+        m_TDhoodTargetPosition.set(clampedAngle);
     }
 
     /**
      * Sets the target values of the turret.
-     * @param targetAngle Target angle to approach in radians.
-     * @param speed Speed to move target angle by in radians/second.
+     * 
+     * @param targetAngle
+     *            Target angle to approach in radians.
+     * @param speed
+     *            Speed to move target angle by in radians/second.
      */
     public void setTurretTarget(double targetAngle, double speed) {
         m_TDturretTargetAngle.set(targetAngle);
@@ -344,13 +382,13 @@ public class Shooter extends SubsystemBase{
     }
 
     public void chimneySpeed(double speed) {
-		if (m_chimneyMotor != null)
-			m_chimneyMotor.set(speed);
+        if (m_chimneyMotor != null)
+            m_chimneyMotor.set(speed);
     }
 
     public void chimneyStop() {
-		if (m_chimneyMotor != null)
-			m_chimneyMotor.set(0);
+        if (m_chimneyMotor != null)
+            m_chimneyMotor.set(0);
     }
 
     public double getTurretTarget() {
@@ -362,11 +400,13 @@ public class Shooter extends SubsystemBase{
     }
 
     public boolean turretAtTarget() {
-        return MathUtil.isNear(m_TDturretTargetAngle.get(), m_turretMotor.getEncoder().getPosition(), m_turretTolerance);
+        return MathUtil.isNear(m_TDturretTargetAngle.get(), m_turretMotor.getEncoder().getPosition(),
+                m_turretTolerance);
     }
 
     public boolean flywheelAtTarget() {
-        return MathUtil.isNear(m_TDflywheelVelocity.get(), m_turretMotor.getEncoder().getVelocity(), cfgDbl("flywheelTolerance"));
+        return MathUtil.isNear(m_TDflywheelVelocity.get(), m_turretMotor.getEncoder().getVelocity(),
+                cfgDbl("flywheelTolerance"));
     }
 
     public boolean hoodAtTarget() {
@@ -376,7 +416,9 @@ public class Shooter extends SubsystemBase{
 
     /**
      * Gets a hood angle needed to throw the ball at a given pitch
-     * @param angle Input pitch in radians (0 = +X, pi/2 = +Z)
+     * 
+     * @param angle
+     *            Input pitch in radians (0 = +X, pi/2 = +Z)
      * @return Valid hood angle in radians
      */
     public double pitchToHood(double angle) {
@@ -386,7 +428,9 @@ public class Shooter extends SubsystemBase{
 
     /**
      * Convert a field velocity to a flywheel velocity for the flywheel
-     * @param velocity Field velocity in m/s
+     * 
+     * @param velocity
+     *            Field velocity in m/s
      * @return Flywheel velocity in RPM
      */
     public double velocityToRPM(double velocity) {
@@ -400,42 +444,60 @@ public class Shooter extends SubsystemBase{
         FERRYING, // indirect movement, try to get turret into the 'free range' closest to hub
         ROBOT_RELATIVE
     }
+
     /**
      * Get an angle relative to the field and transform it into an angle for
      * the turret to move to.
      * 
      * There's two different ways to optimize the turret's rotation:
      * first, move to the closest angle, and wrap at hard limits;
-     * second, reduce interaction with the hard limits by staying in the 'free range' closest
+     * second, reduce interaction with the hard limits by staying in the 'free
+     * range' closest
      * to the hub.
      * 
-     * <br></br>
+     * <br>
+     * </br>
      * 
      * <b>TurretState.SHOOTING</b> refers to the first optimization mode.
-     * it simply calculates the shortest movement to the target angle, and if that passes
-     * over the hard limit, then it instead wraps around over the hard limit, causing a
+     * it simply calculates the shortest movement to the target angle, and if that
+     * passes
+     * over the hard limit, then it instead wraps around over the hard limit,
+     * causing a
      * 360 degree rotation.
      * 
-     * <br></br>
+     * <br>
+     * </br>
      * 
      * <b>TurretState.FERRYING</b> refers to the second optimization mode.
-     * While the robot is ferrying, it'll follow a 'snaking' pattern, thus spending most
-     * of the time with robot +X parallel to field Y-axis. This means there's a certain
-     * 180 degree range which doesn't touch the hard limits, called the 'free range'.
-     * When robot +X is parallel to field Y-axis, having the turret be in the hub-side
-     * free range means it'll never have to cross over a limit, thus maintaining perfect
+     * While the robot is ferrying, it'll follow a 'snaking' pattern, thus spending
+     * most
+     * of the time with robot +X parallel to field Y-axis. This means there's a
+     * certain
+     * 180 degree range which doesn't touch the hard limits, called the 'free
+     * range'.
+     * When robot +X is parallel to field Y-axis, having the turret be in the
+     * hub-side
+     * free range means it'll never have to cross over a limit, thus maintaining
+     * perfect
      * shortest-distance motions.
      * 
-     * <br></br>
+     * <br>
+     * </br>
      * 
-     * That's a lot of words for: always follow the version of the target angle that lies in the
-     * range -180 to 180. When the turret is already in its hub-side free range, this will
-     * result in the shortest distance. When the turret is on the corner, it'll invert
-     * partway through the turn, but this turret should be quick enough to finish before
+     * That's a lot of words for: always follow the version of the target angle that
+     * lies in the
+     * range -180 to 180. When the turret is already in its hub-side free range,
+     * this will
+     * result in the shortest distance. When the turret is on the corner, it'll
+     * invert
+     * partway through the turn, but this turret should be quick enough to finish
+     * before
      * the corner chassis turning is even finished.
      * 
-     * @param targetAngle Target angle in field orientation.
-     * @param state Type of motion to optimize for.
+     * @param targetAngle
+     *            Target angle in field orientation.
+     * @param state
+     *            Type of motion to optimize for.
      * @return Optimized target angle in robot orientation.
      */
     public double angleToTarget(double targetAngle, TurretState state) {
@@ -459,7 +521,7 @@ public class Shooter extends SubsystemBase{
                  * 
                  * can be trusted but will be unoptimized
                  */
-                double freeMotion = robotTargetAngle%Math.PI - robotAngle;
+                double freeMotion = robotTargetAngle % Math.PI - robotAngle;
 
                 /*
                  * shortest possible movement to the target angle
@@ -468,11 +530,11 @@ public class Shooter extends SubsystemBase{
                  * 
                  * can't be trusted but will be optimized
                  */
-                double a = (robotTargetAngle - robotAngle) % Math.PI*2;
-                double b = (robotAngle - robotTargetAngle) % Math.PI*2;
+                double a = (robotTargetAngle - robotAngle) % Math.PI * 2;
+                double b = (robotAngle - robotTargetAngle) % Math.PI * 2;
                 double shortestMotion = (a < b) ? -a : b;
 
-                double motion = shortestMotion;
+                double motion = freeMotion;// shortestMotion;
                 // fallback to free motion if shortest motion passes over limit
                 if (robotAngle + shortestMotion > softLimit || robotAngle + shortestMotion < -softLimit) {
                     motion = freeMotion;
@@ -482,7 +544,7 @@ public class Shooter extends SubsystemBase{
             }
             case FERRYING: {
                 // i wrote two paragraphs explaining why this single statement is cool
-                return robotTargetAngle%Math.PI;
+                return robotTargetAngle % Math.PI;
             }
             case ROBOT_RELATIVE: {
                 return targetAngle;
@@ -495,8 +557,8 @@ public class Shooter extends SubsystemBase{
     private void runTurret() {
         if (m_tuneTurret) {
             if (m_TDturretP.get() != m_turretP ||
-                m_TDturretI.get() != m_turretI ||
-                m_TDturretD.get() != m_turretD) {
+                    m_TDturretI.get() != m_turretI ||
+                    m_TDturretD.get() != m_turretD) {
                 m_turretP = m_TDturretP.get();
                 m_turretI = m_TDturretI.get();
                 m_turretD = m_TDturretD.get();
@@ -508,77 +570,81 @@ public class Shooter extends SubsystemBase{
 
             m_turretFF.setKs(m_TDturretKs.get());
             m_turretFF.setKv(m_TDturretKv.get());
-            m_turretFF.setKa(m_TDturretKa.get()); 
+            m_turretFF.setKa(m_TDturretKa.get());
         }
 
         m_TDturretTargetAngle.set(m_TDturretTargetAngle.get() + m_TDturretSpeed.get() * Constants.schedulerPeriodTime);
         Alliance alliance = DriverStation.getAlliance().orElse(Alliance.Blue);
-        TurretState state = m_tuneTurret? TurretState.ROBOT_RELATIVE :
-            (FieldUtils.getInstance().inAllianceZone(m_Drive.getPose(), alliance) ? TurretState.SHOOTING : TurretState.FERRYING);
-        double controlledAngle = angleToTarget(m_TDturretTargetAngle.get(), state);
+        TurretState state = m_tuneTurret ? TurretState.ROBOT_RELATIVE
+                : (FieldUtils.getInstance().inAllianceZone(m_Drive.getPose(), alliance) ? TurretState.SHOOTING
+                        : TurretState.FERRYING);
+        double controlledAngle = angleToTarget(m_TDturretTargetAngle.get(), TurretState.FERRYING);// state);
         m_turretSetpoint = new TrapezoidProfile.State(controlledAngle, m_TDturretSpeed.get());
 
+        double prevVelocity = m_turretState.velocity;
         m_turretState = m_turretProfile.calculate(Constants.schedulerPeriodTime, m_turretState, m_turretSetpoint);
-        double turretFF = m_turretFF.calculate(m_turretState.velocity);
+        double turretFF = m_turretFF.calculateWithVelocities(prevVelocity, m_turretState.velocity);
 
         m_turretMotor.getClosedLoopController().setSetpoint(
-            m_turretState.position, ControlType.kPosition,
-            ClosedLoopSlot.kSlot0,
-            turretFF);
+                m_turretState.position, ControlType.kPosition,
+                ClosedLoopSlot.kSlot0,
+                turretFF);
 
         m_TDturretMeasuredPosition.set(m_turretMotor.getEncoder().getPosition());
         m_TDturretMeasuredCurrent.set(m_turretMotor.getAppliedOutput());
         m_TDturretProfilePosition.set(m_turretState.position);
-        
-	  }
+
+    }
 
     private void runHood() {
-        if(m_tuneHood) {
+        if (m_tuneHood) {
             if (m_TDhoodP.get() != m_hoodP ||
-                m_TDhoodI.get() != m_hoodI ||
-                m_TDhoodD.get() != m_hoodD) {
-                    m_hoodP = m_TDhoodP.get();
-                    m_hoodI = m_TDhoodI.get();
-                    m_hoodD = m_TDhoodD.get();
-                    m_hoodConfig.closedLoop.pid(m_hoodP, m_hoodI, m_hoodD);
-                    m_hoodAngleMotor.configure(m_hoodConfig,  ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+                    m_TDhoodI.get() != m_hoodI ||
+                    m_TDhoodD.get() != m_hoodD) {
+                m_hoodP = m_TDhoodP.get();
+                m_hoodI = m_TDhoodI.get();
+                m_hoodD = m_TDhoodD.get();
+                m_hoodConfig.closedLoop.pid(m_hoodP, m_hoodI, m_hoodD);
+                m_hoodMotor.configure(m_hoodConfig, ResetMode.kResetSafeParameters,
+                        PersistMode.kPersistParameters);
             }
-            m_hoodKG = m_TDhoodKG.get();
-            m_hoodFF.setKg(m_hoodKG);
-            m_hoodKS = m_TDhoodKS.get();
-            m_hoodFF.setKs(m_hoodKS);
-            m_hoodKV = m_TDhoodKV.get();
-            m_hoodFF.setKv(m_hoodKV);
+            m_hoodKg = m_TDhoodKg.get();
+            m_hoodFF.setKg(m_hoodKg);
+            m_hoodKs = m_TDhoodKs.get();
+            m_hoodFF.setKs(m_hoodKs);
+            m_hoodKv = m_TDhoodKv.get();
+            m_hoodFF.setKv(m_hoodKv);
+
+            m_hoodSetpoint = new TrapezoidProfile.State(m_TDhoodTargetPosition.get(), 0.0);
         }
         HardLimitDirection limit = m_hoodLimiter.check();
         double hoodAngle = m_hoodEncoder.getPosition();
-        if(limit == HardLimitDirection.kFree){
+        if (limit == HardLimitDirection.kFree) {
             m_hoodState = m_hoodProfile.calculate(Constants.schedulerPeriodTime, m_hoodState, m_hoodSetpoint);
             double hoodFeedForward = m_hoodFF.calculate(m_hoodState.velocity);
-            m_hoodClosedLoopController.setSetpoint(m_hoodState.position, ControlType.kPosition, ClosedLoopSlot.kSlot0, hoodFeedForward);
-        }
-        else if(limit == HardLimitDirection.kForward) {
-            if(m_hoodAngleMotor.getAppliedOutput() > 0){
-                m_hoodAngleMotor.set(0);
+            m_hoodClosedLoopController.setSetpoint(m_hoodState.position, ControlType.kPosition, ClosedLoopSlot.kSlot0,
+                    hoodFeedForward);
+        } else if (limit == HardLimitDirection.kForward) {
+            if (m_hoodMotor.getAppliedOutput() > 0) {
+                m_hoodMotor.set(0);
             }
-            if(!MathUtil.isNear(Constants.ShooterConstants.kHoodMaxAngle, hoodAngle, Constants.ShooterConstants.kHoodToleranceDegrees)){
+            if (!MathUtil.isNear(Constants.ShooterConstants.kHoodMaxAngle, hoodAngle,
+                    Constants.ShooterConstants.kHoodToleranceDegrees)) {
                 m_hoodEncoder.setPosition(Constants.ShooterConstants.kHoodMaxAngle);
             }
-            if(m_hoodSetpoint.position > hoodAngle)
-            {
+            if (m_hoodSetpoint.position > hoodAngle) {
                 m_hoodState = new TrapezoidProfile.State(Constants.ShooterConstants.kHoodMaxAngle, 0.0);
                 m_hoodSetpoint = new TrapezoidProfile.State(Constants.ShooterConstants.kHoodMaxAngle, 0.0);
             }
-        } 
-        else if (limit == HardLimitDirection.kReverse) {
-            if(m_hoodAngleMotor.getAppliedOutput() < 0){
-                m_hoodAngleMotor.set(0);
+        } else if (limit == HardLimitDirection.kReverse) {
+            if (m_hoodMotor.getAppliedOutput() < 0) {
+                m_hoodMotor.set(0);
             }
-            if(!MathUtil.isNear(Constants.ShooterConstants.kHoodMinAngle, hoodAngle, Constants.ShooterConstants.kHoodToleranceDegrees)){
+            if (!MathUtil.isNear(Constants.ShooterConstants.kHoodMinAngle, hoodAngle,
+                    Constants.ShooterConstants.kHoodToleranceDegrees)) {
                 m_hoodEncoder.setPosition(Constants.ShooterConstants.kHoodMinAngle);
             }
-            if(m_hoodSetpoint.position < hoodAngle)
-            {
+            if (m_hoodSetpoint.position < hoodAngle) {
                 m_hoodState = new TrapezoidProfile.State(Constants.ShooterConstants.kHoodMinAngle, 0.0);
                 m_hoodSetpoint = new TrapezoidProfile.State(Constants.ShooterConstants.kHoodMinAngle, 0.0);
             }
@@ -586,40 +652,47 @@ public class Shooter extends SubsystemBase{
 
         m_TDHoodPosition.set(hoodAngle);
         m_TDHoodProfilePosition.set(m_hoodState.position);
-        m_TDHoodMotorCurrent.set(m_hoodAngleMotor.getOutputCurrent());
+        m_TDHoodMotorCurrent.set(m_hoodMotor.getOutputCurrent());
     }
-    
+
     @Override
     public void periodic() {
-        if (cfgBool("tuneFlywheelPID")) {
-            if (m_TDflywheelP.get() != m_flywheelP ||
-                m_TDflywheelI.get() != m_flywheelI ||
-                m_TDflywheelD.get() != m_flywheelD) {
-                m_flywheelP = m_TDflywheelP.get();
-                m_flywheelI = m_TDflywheelI.get();
-                m_flywheelD = m_TDflywheelD.get();
-
-                m_flywheelLeftConfig.closedLoop.pid(m_flywheelP, m_flywheelI, m_flywheelD);
-
-                m_flywheelLeftMotor.configure(m_flywheelLeftConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-            }
-        }
-
         if (m_flywheelEnabled) {
+            if (m_tuneFlywheel) {
+                if (m_TDflywheelP.get() != m_flywheelP ||
+                        m_TDflywheelI.get() != m_flywheelI ||
+                        m_TDflywheelD.get() != m_flywheelD) {
+                    m_flywheelP = m_TDflywheelP.get();
+                    m_flywheelI = m_TDflywheelI.get();
+                    m_flywheelD = m_TDflywheelD.get();
+
+                    m_flywheelLeftConfig.closedLoop.pid(m_flywheelP, m_flywheelI, m_flywheelD);
+
+                    m_flywheelLeftMotor.configure(m_flywheelLeftConfig, ResetMode.kResetSafeParameters,
+                            PersistMode.kPersistParameters);
+                }
+
+                m_flywheelFF.setKv(m_TDflywheelKv.get());
+                m_flywheelFF.setKa(m_TDflywheelKa.get());
+                m_flywheelFF.setKs(m_TDflywheelKs.get());
+            }
+
             double arbFF = m_flywheelFF.calculate(m_TDflywheelVelocity.get());
-            m_flywheelLeftMotor.getClosedLoopController().setSetpoint(m_TDflywheelVelocity.get(), ControlType.kVelocity, ClosedLoopSlot.kSlot0, arbFF);
+            m_flywheelLeftMotor.getClosedLoopController().setSetpoint(m_TDflywheelVelocity.get(), ControlType.kVelocity,
+                    ClosedLoopSlot.kSlot0, arbFF);
 
             m_TDflywheelMeasuredVelocity.set(m_flywheelLeftMotor.getEncoder().getVelocity());
             m_TDflywheelMeasuredCurrent.set(m_flywheelLeftMotor.getOutputCurrent());
         }
 
-        if (m_turretEnabled) runTurret();
+        if (m_turretEnabled)
+            runTurret();
 
         if (m_chimneyEnabled) {
-          m_TDchimneyMeasuredCurrent.set(m_chimneyMotor.getAppliedOutput());
+            m_TDchimneyMeasuredCurrent.set(m_chimneyMotor.getAppliedOutput());
         }
 
-        if(m_hoodEnabled) {
+        if (m_hoodEnabled) {
             runHood();
         }
 

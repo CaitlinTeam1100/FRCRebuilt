@@ -1,44 +1,45 @@
 {
+
 "example" : {
     "motorConfigs" : {
        "frontRightSteer" : {"cType":"SparkMax", "mType":"kBrushless","canid":8},
        "frontRightDrive" : {"cType":"SparkFlex","mType":"kBrushless","canid":9}
-   },
+    },
 
-   "Subsystem" : [
+    "Subsystem" : [
         { "varName" : "exampleInt" , "value" : 18 },
         { "varName" : "exampleDouble" , "value" : 3.8 },
         { "varName" : "exampleBoolean" , "value" : false }
-   ]
+    ]
 },
 
 "default" : { 
     "motorConfigs" : {
-       "frontRightTurning" : {"cType":"SparkMax", "mType":"kBrushless", "canid":3},
-       "frontRightDrive" :   {"cType":"SparkMax", "mType":"kBrushless", "canid":2},
-       "frontLeftTurning" :  {"cType":"SparkMax", "mType":"kBrushless", "canid":5},
-       "frontLeftDrive" :    {"cType":"SparkMax", "mType":"kBrushless", "canid":4},
-       "backRightTurning" :  {"cType":"SparkMax", "mType":"kBrushless", "canid":9},
-       "backRightDrive" :    {"cType":"SparkMax", "mType":"kBrushless", "canid":8},
-       "backLeftTurning" :   {"cType":"SparkMax", "mType":"kBrushless", "canid":7},
-       "backLeftDrive" :     {"cType":"SparkMax", "mType":"kBrushless", "canid":6}
+        "frontRightTurning" : {"cType":"SparkMax", "mType":"kBrushless", "canid":3},
+        "frontRightDrive" :   {"cType":"SparkMax", "mType":"kBrushless", "canid":2},
+        "frontLeftTurning" :  {"cType":"SparkMax", "mType":"kBrushless", "canid":5},
+        "frontLeftDrive" :    {"cType":"SparkMax", "mType":"kBrushless", "canid":4},
+        "backRightTurning" :  {"cType":"SparkMax", "mType":"kBrushless", "canid":9},
+        "backRightDrive" :    {"cType":"SparkMax", "mType":"kBrushless", "canid":8},
+        "backLeftTurning" :   {"cType":"SparkMax", "mType":"kBrushless", "canid":7},
+        "backLeftDrive" :     {"cType":"SparkMax", "mType":"kBrushless", "canid":6}
     },
   
     "Drive" : [
-       {"varName" : "DriveMotorFreeSpeed", "value" : 6784},
-       {"varName" : "WheelDiameter", "value" : 0.0762},
-       {"varName" : "PinionTeeth", "value" : 13},
-       {"varName" : "DrivingkP", "value" : 0.02},
-       {"varName" : "DrivingkI", "value" : 0.0},
-       {"varName" : "DrivingkD", "value" : 0.0},
-       {"varName" : "DrivingkS", "value" : 0.0187},
-       {"varName" : "DrivingkA", "value" : 0.0437},
-       {"varName" : "TurningkP", "value" : 1.0}
+        {"varName" : "DriveMotorFreeSpeed", "value" : 6784},
+        {"varName" : "WheelDiameter", "value" : 0.0762},
+        {"varName" : "PinionTeeth", "value" : 13},
+        {"varName" : "DrivingkP", "value" : 0.02},
+        {"varName" : "DrivingkI", "value" : 0.0},
+        {"varName" : "DrivingkD", "value" : 0.0},
+        {"varName" : "DrivingkS", "value" : 0.0187},
+        {"varName" : "DrivingkA", "value" : 0.0437},
+        {"varName" : "TurningkP", "value" : 1.0}
     ],
 
-   "Intake" : [
-       {"varName" : "intakeEnabled", "value" : false},
-       {"varName" : "intakeRollerCanId", "value" : 16}
+    "Intake" : [
+        {"varName" : "intakeEnabled", "value" : false},
+        {"varName" : "intakeRollerCanId", "value" : 16}
     ],
   
     "Shooter": [
@@ -51,9 +52,9 @@
         {"varName" : "flywheelI", "value": 0},
         {"varName" : "flywheelD", "value": 0},
 
-        {"varName" : "flywheelKS", "value": 0},
-        {"varName" : "flywheelKV", "value": 0},
-        {"varName" : "flywheelKA", "value": 0},
+        {"varName" : "flywheelKs", "value": 0},
+        {"varName" : "flywheelKv", "value": 0},
+        {"varName" : "flywheelKa", "value": 0},
 
         {"varName" : "flywheelVelocityFactor", "value" : 1},
 
@@ -83,16 +84,16 @@
 
         {"varName" : "hoodEnabled", "value" : false},
         {"varName" : "hoodAngleMotorCANid", "value" : 13},
-        {"varName" : "tuneHood", "value" : false},
+        {"varName" : "tuneHood", "value" : true},
 
-        {"varName" : "hoodkG", "value" : 0},
-        {"varName" : "hoodkS", "value" : 0},
-        {"varName" : "hoodkV", "value" : 0},
-        {"varName" : "hoodkP", "value" : 0},
-        {"varName" : "hoodkI", "value" : 0},
-        {"varName" : "hoodkD", "value" : 0},
+        {"varName" : "hoodKg", "value" : 0},
+        {"varName" : "hoodKs", "value" : 0},
+        {"varName" : "hoodKv", "value" : 0},
+        {"varName" : "hoodP", "value" : 0},
+        {"varName" : "hoodI", "value" : 0},
+        {"varName" : "hoodD", "value" : 0},
 
-        {"varName" : "hoodPlanetaryRatio", "value" : 0.04},
+        {"varName" : "hoodPlanetaryRatio", "value" : 20},
         {"varName" : "hoodPinionTeeth", "value" : 10},
         {"varName" : "hoodLanternTeeth", "value" : 128},
         {"varName" : "hoodMotorFreeSpeed", "value" : 5676},
@@ -101,98 +102,94 @@
         {"varName" : "hoodMinAngle", "value": 0}
     ],
 
-       "Spindexer" : [
-       {"varName" : "spindexerEnabled", "value" : false},
-       {"varName" : "spindexerCanId", "value" : 15},
-       {"varName" : "spindexerStallLimit", "value" : 0},
-       {"varName" : "spindexerFreeLimit", "value" : 60}
+    "Spindexer" : [
+        {"varName" : "spindexerEnabled", "value" : false},
+        {"varName" : "spindexerCanId", "value" : 15},
+        {"varName" : "spindexerStallLimit", "value" : 0},
+        {"varName" : "spindexerFreeLimit", "value" : 60}
    ],
 
-   "visionConfig" : [
-        {"name":"Arducam_OV9782_C","positionT":{"x":0.0,"y":0.0,"z":0.0},"positionR":{"quaternion":{"W":1.0,"X":0.0,"Y":0.0,"Z":0.0}},"primaryStrat":"LOWEST_AMBIGUITY","backupStrat":"CLOSEST_TO_CAMERA_HEIGHT"}
+    "Climber" : [
+        {"varName" : "climberEnabled", "value" : false},
+        {"varName" : "tuneClimber", "value" : false},
+        {"varName" : "motorCanId", "value" : 18}
+    ],
+
+    "visionConfig" : [
+        {"name":"Arducam_OV9782_C","translation":{"x":0.0,"y":0.0,"z":0.0},"rotation":{"quaternion":{"W":1.0,"X":0.0,"Y":0.0,"Z":0.0}},"primaryStrat":"LOWEST_AMBIGUITY","backupStrat":"CLOSEST_TO_CAMERA_HEIGHT"}
     ]
 },
 
 
 "leaflet" : {
    "motorConfigs" : {
-       "frontRightTurning" : {"cType":"SparkMax", "mType":"kBrushless", "canid":3},
-       "frontRightDrive" :   {"cType":"SparkMax", "mType":"kBrushless", "canid":2},
-       "frontLeftTurning" :  {"cType":"SparkMax", "mType":"kBrushless", "canid":5},
-       "frontLeftDrive" :    {"cType":"SparkMax", "mType":"kBrushless", "canid":4},
-       "backRightTurning" :  {"cType":"SparkMax", "mType":"kBrushless", "canid":9},
-       "backRightDrive" :    {"cType":"SparkMax", "mType":"kBrushless", "canid":8},
-       "backLeftTurning" :   {"cType":"SparkMax", "mType":"kBrushless", "canid":7},
-       "backLeftDrive" :     {"cType":"SparkMax", "mType":"kBrushless", "canid":6},
-       "climberRight"  :     {"cType":"SparkFlex", "mType":"kBrushless", "canid":18},
-       "climberLeft"  :      {"cType":"SparkFlex", "mType":"kBrushless", "canid":19}
+        "frontRightTurning" : {"cType":"SparkMax", "mType":"kBrushless", "canid":3},
+        "frontRightDrive" :   {"cType":"SparkMax", "mType":"kBrushless", "canid":2},
+        "frontLeftTurning" :  {"cType":"SparkMax", "mType":"kBrushless", "canid":5},
+        "frontLeftDrive" :    {"cType":"SparkMax", "mType":"kBrushless", "canid":4},
+        "backRightTurning" :  {"cType":"SparkMax", "mType":"kBrushless", "canid":9},
+        "backRightDrive" :    {"cType":"SparkMax", "mType":"kBrushless", "canid":8},
+        "backLeftTurning" :   {"cType":"SparkMax", "mType":"kBrushless", "canid":7},
+        "backLeftDrive" :     {"cType":"SparkMax", "mType":"kBrushless", "canid":6},
+        "climberRight"  :     {"cType":"SparkFlex", "mType":"kBrushless", "canid":18},
+        "climberLeft"  :      {"cType":"SparkFlex", "mType":"kBrushless", "canid":19}
    },
    "Drive" : [
-       {"varName" : "DriveMotorFreeSpeed", "value" : 6784},
-       {"varName" : "WheelDiameter", "value" : 0.0762},
-       {"varName" : "PinionTeeth", "value" : 13},
-       {"varName" : "DrivingkP", "value" : 0.02},
-       {"varName" : "DrivingkI", "value" : 0.0},
-       {"varName" : "DrivingkD", "value" : 0.0},
-       {"varName" : "DrivingkS", "value" : 0.0187},
-       {"varName" : "DrivingkA", "value" : 0.0437},
-       {"varName" : "TurningkP", "value" : 1.0}
+        {"varName" : "DriveMotorFreeSpeed", "value" : 6784},
+        {"varName" : "WheelDiameter", "value" : 0.0762},
+        {"varName" : "PinionTeeth", "value" : 13},
+        {"varName" : "DrivingkP", "value" : 0.02},
+        {"varName" : "DrivingkI", "value" : 0.0},
+        {"varName" : "DrivingkD", "value" : 0.0},
+        {"varName" : "DrivingkS", "value" : 0.0187},
+        {"varName" : "DrivingkA", "value" : 0.0437},
+        {"varName" : "TurningkP", "value" : 1.0}
     ],
-   "Spindexer" : [
-       {"varName" : "spindexerEnabled", "value" : false},
-       {"varName" : "spindexerCanId", "value" : 15},
-       {"varName" : "spindexSpeed", "value" : 1.0},
-       {"varName" : "spindexerStallLimit", "value" : 0},
-       {"varName" : "spindexerFreeLimit", "value" : 60}
-   ],
-   "Intake" : [
-       {"varName" : "intakeEnabled", "value" : false},
-       {"varName" : "intakeRollerCanId", "value" : 16},
-       {"varName" : "intakeSpeed", "value" : 1.0},
-       {"varName" : "intakeRollerStallLimit", "value" : 25},
-       {"varName" : "intakeRollerFreeLimit", "value" : 60},
-       {"varName" : "intakeDeployerCanId1", "value" : 17},
-       {"varName" : "intakeDeployerCanId2", "value" : 19},
-       {"varName" : "intakeDeployerSpeed", "value" : 1.0},
-       {"varName" : "intakeDeployer2Invert", "value" : true},
-       {"varName" : "intakeDeployedThreshold", "value" : 0.0},
-       {"varName" : "intakeDeployerStallLimit", "value" : 25},
-       {"varName" : "intakeDeployerFreeLimit", "value" : 60}
-   ],
+    "Spindexer" : [
+        {"varName" : "spindexerEnabled", "value" : false},
+        {"varName" : "spindexerCanId", "value" : 15},
+        {"varName" : "spindexSpeed", "value" : 1.0},
+        {"varName" : "spindexerStallLimit", "value" : 0},
+        {"varName" : "spindexerFreeLimit", "value" : 60}
+    ],
+    "Intake" : [
+        {"varName" : "intakeEnabled", "value" : false},
+        {"varName" : "intakeRollerCanId", "value" : 16},
+        {"varName" : "intakeSpeed", "value" : 1.0}, 
+        {"varName" : "intakeRollerStallLimit", "value" : 25},
+        {"varName" : "intakeRollerFreeLimit", "value" : 60},
+        {"varName" : "intakeDeployerCanId1", "value" : 17},
+        {"varName" : "intakeDeployerCanId2", "value" : 19},
+        {"varName" : "intakeDeployer2Invert", "value" : true},
+        {"varName" : "intakeDeployedThreshold", "value" : 0.0},
+        {"varName" : "intakeDeployerStallLimit", "value" : 25},
+        {"varName" : "intakeDeployerFreeLimit", "value" : 60}
+    ],
+    "Shooter" : [
+        {"varName" : "flywheelEnabled", "value" : true},
+        {"varName" : "leftFlywheelCANid", "value" : 13},
+        {"varName" : "rightFlywheelCANid", "value" : 14},
 
-   "Chimney" : [
-        {"varName" : "chimneyEnabled", "value" : false},
-        {"varName" : "chimneyMotorCANid", "value" : 14},
-        {"varName" : "chimneySpeed", "value" : 1.0},
-        {"varName" : "chimneyStallLimit", "value" : 0},
-        {"varName" : "chimneyFreeLimit", "value" : 60}
-   ],
-
-   "Shooter" : [
-        {"varName" : "flywheelEnabled", "value" : false},
-        {"varName" : "leftFlywheelCANid", "value" : 10},
-        {"varName" : "rightFlywheelCANid", "value" : 11},
-
-        {"varName" : "tuneFlywheelPID", "value": 0},
-        {"varName" : "flywheelP", "value": 0},
+        {"varName" : "tuneFlywheel", "value": false},
+        {"varName" : "flywheelP", "value": 0.00005},
         {"varName" : "flywheelI", "value": 0},
-        {"varName" : "flywheelD", "value": 0},
+        {"varName" : "flywheelD", "value": 0.0002},
 
-        {"varName" : "flywheelKS", "value": 0},
-        {"varName" : "flywheelKV", "value": 0},
-        {"varName" : "flywheelKA", "value": 0},
+        {"varName" : "flywheelKs", "value": 0.001},
+        {"varName" : "flywheelKv", "value": 0.00185},
+        {"varName" : "flywheelKa", "value": 0},
 
         {"varName" : "turretEnabled", "value" : true},
         {"varName" : "turretRotationCANid", "value" : 10},
-        {"varName" : "tuneTurret", "value" : true},
+        {"varName" : "tuneTurret", "value" : false},
 
-        {"varName" : "turretP", "value": 0},
+        {"varName" : "turretP", "value": 0.50},
         {"varName" : "turretI", "value": 0},
         {"varName" : "turretD", "value": 0},
 
-        {"varName" : "turretKs", "value": 0},
-        {"varName" : "turretKv", "value": 0},
-        {"varName" : "turretKa", "value": 0},
+        {"varName" : "turretKs", "value": 0.12},
+        {"varName" : "turretKv", "value": 2.7},
+        {"varName" : "turretKa", "value": 0.01},
 
         {"varName" : "turretPlanetaryRatio", "value" : 20},
         {"varName" : "turretPinionTeeth", "value" : 12},
@@ -206,44 +203,222 @@
         {"varName" : "turretPositionY", "value" : 0},
         {"varName" : "turretPositionZ", "value" : 0},
 
-        {"varName" : "hoodEnabled", "value" : false},
-        {"varName" : "hoodAngleMotorCANid", "value" : 13},
-        {"varName" : "tuneHood", "value" : false},
+        {"varName" : "hoodEnabled", "value" : true},
+        {"varName" : "hoodAngleMotorCANid", "value" : 12},
+        {"varName" : "tuneHood", "value" : true},
 
-        {"varName" : "hoodkG", "value" : 0},
-        {"varName" : "hoodkS", "value" : 0},
-        {"varName" : "hoodkV", "value" : 0},
-        {"varName" : "hoodkP", "value" : 0},
-        {"varName" : "hoodkI", "value" : 0},
-        {"varName" : "hoodkD", "value" : 0},
+        {"varName" : "hoodKg", "value" : -0.1},
+        {"varName" : "hoodKs", "value" : 0.01},
+        {"varName" : "hoodKv", "value" : 0.08},
+        {"varName" : "hoodP", "value" : 0.1},
+        {"varName" : "hoodI", "value" : 0},
+        {"varName" : "hoodD", "value" : 0},
 
-        {"varName" : "hoodPlanetaryRatio", "value" : 0.04},
+        {"varName" : "hoodPlanetaryRatio", "value" : 20},
         {"varName" : "hoodPinionTeeth", "value" : 10},
         {"varName" : "hoodLanternTeeth", "value" : 128},
         {"varName" : "hoodMotorFreeSpeed", "value" : 5676},
         {"varName" : "hoodMaxAcceleration", "value" : 720},
-        {"varName" : "hoodMaxAngle", "value" : 40},
-        {"varName" : "hoodMinAngle", "value": 0},
-
+        {"varName" : "hoodMaxAngle", "value" : 0},
+        {"varName" : "hoodMinAngle", "value": -40},
         {"varName" : "chimneyEnabled", "value": false},
         {"varName" : "chimneyMotorCANid", "value": 20}
-        
+    ],
 
-   ],
-   "LED" : [
+    "LED" : [
         {"varName" : "LEDPort", "value": 1},
         {"varName" : "stateChangeWarningTime", "value" : 1.5 }
-   ],
+    ],
 
    "Climber" : [
+        {"varName" : "climberEnabled", "value" : false},
+        {"varName" : "tuneClimber", "value" : false},
         {"varName" : "motorCanId", "value" : 18}
-   ],
+    ],
+
+    "Vision" : [
+        {"varName" : "Enabled", "value" : true}
+    ],
 
    "visionConfig" : [
-        {"name":"Arducam_OV9782_B","positionT":{"x":0.0,"y":0.0,"z":0.0},"positionR":{"quaternion":{"W":1.0,"X":0.0,"Y":0.0,"Z":0.0}},"primaryStrat":"LOWEST_AMBIGUITY","backupStrat":"CLOSEST_TO_CAMERA_HEIGHT"},
-        {"name":"Arducam_OV9782_C","positionT":{"x":0.0,"y":0.0,"z":0.0},"positionR":{"quaternion":{"W":1.0,"X":0.0,"Y":0.0,"Z":0.0}},"primaryStrat":"LOWEST_AMBIGUITY","backupStrat":"CLOSEST_TO_CAMERA_HEIGHT"}
-  ]
+        {
+            "name": "Arducam_OV9782_B",
+            "translation": {
+                "x":0.0,
+                "y":0.0,
+                "z":0.0
+            },
+            "angles": {
+                "pitch":0.0,
+                "yaw":0.0,
+                "roll":0.0
+            },
+            "primaryStrat": "LOWEST_AMBIGUITY",
+            "backupStrat": "CLOSEST_TO_CAMERA_HEIGHT"
+        },
+        {
+            "name": "Arducam_OV9782_C",
+            "translation": {
+                "x": 0.0,
+                "y": 0.0,
+                "z": 0.0
+            },
+            "angles": {
+                "pitch": 0,
+                "yaw": 0,
+                "roll": 0
+            },
+            "primaryStrat": "LOWEST_AMBIGUITY",
+            "backupStrat": "CLOSEST_TO_CAMERA_HEIGHT"
+        },
+        {
+            "name": "Arducam_OV9782_D",
+            "translation": {
+                "x": 0.167,
+                "y": 0.0,
+                "z": 0.171
+            },
+            "angles": {
+                "pitch": 55,
+                "yaw": 0,
+                "roll": 90
+            },
+            "primaryStrat": "MULTI_TAG_PNP_ON_COPROCESSOR",
+            "backupStrat": "CLOSEST_TO_CAMERA_HEIGHT"
+        }
+    ]
+},
+
+"realbot" : {
+	"motorConfigs" : {
+		"frontLeftDrive" :      {"cType":"SparkFlex",   "mType":"kBrushless",   "canid":2},
+		"frontLeftTurning" :    {"cType":"SparkMax",    "mType":"kBrushless",   "canid":3},
+		"frontRightDrive" :     {"cType":"SparkFlex",   "mType":"kBrushless",   "canid":8},
+		"frontRightTurning" :   {"cType":"SparkMax",    "mType":"kBrushless",   "canid":9},
+		"backLeftDrive" :       {"cType":"SparkFlex",   "mType":"kBrushless",   "canid":4},
+		"backLeftTurning" :     {"cType":"SparkMax",    "mType":"kBrushless",   "canid":5},
+		"backRightDrive" :      {"cType":"SparkFlex",   "mType":"kBrushless",   "canid":6},
+		"backRightTurning" :    {"cType":"SparkMax",    "mType":"kBrushless",   "canid":7},
+
+        "flywheel1":            {"cType":"SparkFlex",   "mType":"kBrushless",   "canid":10},
+        "flywheel2":            {"cType":"SparkFlex",   "mType":"kBrushless",   "canid":11},
+        "turretRotation":       {"cType":"SparkMax",    "mType":"kBrushless",   "canid":12},
+        "hood":                 {"cType":"SparkFlex",   "mType":"kBrushless",   "canid":13},
+		"chimney":  		    {"cType":"SparkMax",    "mType":"kBrushless",   "canid":14},
+
+		"spindexer":            {"cType":"SparkMax",    "mType":"kBrushless",   "canid":15},
+
+		"intakeRollerTop":      {"cType":"SparkFlex",   "mType":"kBrushless",   "canid":16},
+		"intakeDeploy1":        {"cType":"SparkMax",    "mType":"kBrushless",   "canid":17},
+		"intakeDeploy2":        {"cType":"SparkMax",    "mType":"kBrushless",   "canid":19},
+
+		"climber":              {"cType":"SparkFlex",   "mType":"kBrushless",   "canid":18}
+	},
+
+   	"Drive" : [
+        {"varName" : "DriveMotorFreeSpeed", "value" : 6784},
+        {"varName" : "WheelDiameter", "value" : 0.0762},
+        {"varName" : "PinionTeeth", "value" : 13},
+        {"varName" : "DrivingkP", "value" : 0.02},
+        {"varName" : "DrivingkI", "value" : 0.0},
+        {"varName" : "DrivingkD", "value" : 0.0},
+        {"varName" : "DrivingkS", "value" : 0.0187},
+        {"varName" : "DrivingkA", "value" : 0.0437},
+        {"varName" : "TurningkP", "value" : 1.0}
+	],
+
+	"Spindexer" : [
+		{"varName" : "spindexerEnabled", "value" : true},
+		{"varName" : "spindexerSpeed", "value" : 0.9},
+		{"varName" : "spindexerStallLimit", "value" : 20},
+		{"varName" : "spindexerFreeLimit", "value" : 40}
+	],
+
+	"Intake" : [
+		{"varName" : "rollerEnabled", "value" : true},
+
+		{"varName" : "rollerSpeed", "value" : 0.3}, 
+		{"varName" : "rollerStallLimit", "value" : 10},
+		{"varName" : "rollerFreeLimit", "value" : 40},
+
+		{"varName" : "deployerEnabled", "value" : false},
+
+		{"varName" : "deployer2Invert", "value" : true},
+		{"varName" : "deployerStallLimit", "value" : 25},
+		{"varName" : "deployerFreeLimit", "value" : 60}
+	],
+
+	"Shooter" : [
+		{"varName" : "flywheelEnabled", "value" : true},
+
+        {"varName" : "tuneFlywheel", "value": false},
+        {"varName" : "flywheelP", "value": 0.00005},
+        {"varName" : "flywheelI", "value": 0},
+        {"varName" : "flywheelD", "value": 0.0002},
+
+        {"varName" : "flywheelKs", "value": 0.001},
+        {"varName" : "flywheelKv", "value": 0.00185},
+        {"varName" : "flywheelKa", "value": 0},
+
+        {"varName" : "flywheelVelocityFactor", "value" : 1},
+
+        {"varName" : "turretEnabled", "value" : true},
+
+        {"varName" : "tuneTurret", "value" : false},
+
+        {"varName" : "turretP", "value": 0.50},
+        {"varName" : "turretI", "value": 0},
+        {"varName" : "turretD", "value": 0},
+
+        {"varName" : "turretKs", "value": 0.12},
+        {"varName" : "turretKv", "value": 2.7},
+        {"varName" : "turretKa", "value": 0.01},
+
+        {"varName" : "turretPlanetaryRatio", "value" : 20},
+        {"varName" : "turretPinionTeeth", "value" : 12},
+        {"varName" : "turretGearTeeth", "value" : 68},
+
+        {"varName" : "turretDeadzoneStart", "value": 6.28319},
+        {"varName" : "turretHardLimit", "value" : 9.942478},
+        {"varName" : "turretSoftLimit", "value" : 9.942478},
+
+        {"varName" : "turretPositionX", "value" : 0},
+        {"varName" : "turretPositionY", "value" : 0},
+        {"varName" : "turretPositionZ", "value" : 0},
+
+		{"varName" : "hoodEnabled", "value" : true},
+
+        {"varName" : "tuneHood", "value" : true},
+
+        {"varName" : "hoodKg", "value" : -0.1},
+        {"varName" : "hoodKs", "value" : 0.01},
+        {"varName" : "hoodKv", "value" : 0.08},
+        {"varName" : "hoodP", "value" : 0.1},
+        {"varName" : "hoodI", "value" : 0},
+        {"varName" : "hoodD", "value" : 0},
+
+        {"varName" : "hoodPlanetaryRatio", "value" : 20},
+        {"varName" : "hoodPinionTeeth", "value" : 10},
+        {"varName" : "hoodLanternTeeth", "value" : 128},
+        {"varName" : "hoodMotorFreeSpeed", "value" : 5676},
+        {"varName" : "hoodMaxAcceleration", "value" : 720},
+        {"varName" : "hoodMaxAngle", "value" : 0},
+        {"varName" : "hoodMinAngle", "value": -40},
+
+		{"varName" : "chimneyEnabled", "value" : true}
+	],
+
+	"LED" : [
+		{"varName" : "LEDPort", "value": 1},
+		{"varName" : "stateChangeWarningTime", "value" : 1.5 }
+	],
+
+	"Climber" : [
+		{"varName" : "climberEnabled", "value" : false}
+	],
+
+	"visionConfig" : [
+	]
 }
 
 }
-

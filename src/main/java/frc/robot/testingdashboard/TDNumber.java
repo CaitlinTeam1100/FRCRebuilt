@@ -18,7 +18,7 @@ public class TDNumber implements TDValue {
       m_tabName = subsystem.getName();
       m_groupName = groupName;
       m_dataName = dataName;
-      TestingDashboard.getInstance().registerNumber(m_tabName, groupName, dataName, m_val);
+      TestingDashboard.getInstance().registerNumber(m_tabName, m_groupName, m_dataName, m_val);
       subsystem.registerValue(this);
       get();
     }
@@ -47,7 +47,7 @@ public class TDNumber implements TDValue {
      */
     public double get() {
       if (!m_needsPost) {
-        m_val = TestingDashboard.getInstance().getNumber(m_tabName, m_dataName);
+        m_val = TestingDashboard.getInstance().getNumber(m_tabName, m_groupName, m_dataName);
       }
       return m_val;
     }
@@ -56,7 +56,7 @@ public class TDNumber implements TDValue {
     {
       if (m_needsPost)
       {
-        TestingDashboard.getInstance().updateNumber(m_tabName, m_dataName, m_val);
+        TestingDashboard.getInstance().updateNumber(m_tabName, m_groupName, m_dataName, m_val);
         m_needsPost = false;
       }
     }

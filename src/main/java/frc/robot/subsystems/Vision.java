@@ -41,7 +41,6 @@ public class Vision extends SubsystemBase {
     List<VisionConfig> myConfig = Configuration.getInstance().getVisionConfigs();
     if (myConfig != null)
     {
-      // m_visionSystems.ensureCapacity(m_visionConfig.length);
       for(VisionConfig config : myConfig) {
          VisionSystem system = new VisionSystem(config);
          m_visionSystems.put(config.cameraName, system);
@@ -89,26 +88,27 @@ public class Vision extends SubsystemBase {
   @Override
   public void periodic() {
     if (RobotMap.V_ENABLED) {
-      if(getPoseUpdatesEnabled()){
+      if (getPoseUpdatesEnabled()) {
         Drive robotDrive = Drive.getInstance();
 
-        for(var entry : m_visionSystems.entrySet()) {
+        for (var entry : m_visionSystems.entrySet()) {
           var system = entry.getValue();
           var newest = system.updateAndGetEstimatedPose();
-          if(system.shouldIncludeInPoseEstimates()){
-            newest.ifPresent(
-              est -> {
-                Pose2d estPose = est.estimatedPose.toPose2d();
+          newest.ifPresent(
+            est -> {
+              Pose2d estPose = est.estimatedPose.toPose2d();
 
+              m_field.getObject(system.getName()).setPose(estPose);
+
+              if (system.shouldIncludeInPoseEstimates()) {
                 robotDrive.addVisionMeasurement(estPose, est.timestamp, est.stdDevs);
 
-                m_field.getObject(system.getName()).setPose(estPose);
                 m_estX.set(estPose.getX());
                 m_estY.set(estPose.getY());
                 m_estRot.set(estPose.getRotation().getDegrees());
               }
-            );
-          }
+            }
+          );
         }
       }
       super.periodic();

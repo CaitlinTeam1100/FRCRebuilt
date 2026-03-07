@@ -19,6 +19,8 @@ import edu.wpi.first.wpilibj.shuffleboard.BuiltInLayouts;
 import edu.wpi.first.wpilibj.shuffleboard.Shuffleboard;
 import edu.wpi.first.wpilibj.shuffleboard.ShuffleboardLayout;
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.testingdashboard.TestingDashboardDataTable.DataGroup;
+import frc.robot.testingdashboard.TestingDashboardDataTable.TDValType;
 
 /**
  * This class sets up a testing dashboard using
@@ -96,7 +98,7 @@ public class TestingDashboard {
     }
     System.out.println("Adding data " + dataName);
     if (tab.dataTable.addName(dataGrpName, dataName))
-      tab.dataTable.addDefaultNumberValue(dataName, defaultValue);
+      tab.dataTable.addDefaultNumberValue(dataGrpName, dataName, defaultValue);
   }
 
   void registerBoolean(String tabName, String dataGrpName, String dataName, boolean defaultValue) {
@@ -107,7 +109,7 @@ public class TestingDashboard {
     }
     System.out.println("Adding data " + dataName);
     if (tab.dataTable.addName(dataGrpName, dataName))
-      tab.dataTable.addDefaultBooleanValue(dataName, defaultValue);
+      tab.dataTable.addDefaultBooleanValue(dataGrpName, dataName, defaultValue);
   }
 
   void registerString(String tabName, String dataGrpName, String dataName, String defaultValue) {
@@ -118,7 +120,7 @@ public class TestingDashboard {
     }
     System.out.println("Adding String data " + dataName);
     if (tab.dataTable.addName(dataGrpName, dataName))
-      tab.dataTable.addDefaultStringValue(dataName, defaultValue);
+      tab.dataTable.addDefaultStringValue(dataGrpName, dataName, defaultValue);
   }
 
   void registerSendable(String tabName, String dataGrpName, String dataName, Sendable sendable) {
@@ -129,72 +131,72 @@ public class TestingDashboard {
     }
     System.out.println("Adding Sendable data " + dataName);
     if (tab.dataTable.addName(dataGrpName, dataName))
-      tab.dataTable.addDefaultSendableValue(dataName, sendable);
+      tab.dataTable.addDefaultSendableValue(dataGrpName, dataName, sendable);
   }
 
-   void updateNumber(String tabName, String dataName, double value) {
+   void updateNumber(String tabName, String dataGrpName, String dataName, double value) {
     TestingDashboardTab tab = getTab(tabName);
     if (tab == null) {
       System.out.println("WARNING: Subsystem for data does not exist!");
       return;
     }
-    tab.dataTable.getEntry(dataName).setDouble(value);
+    tab.dataTable.getEntry(dataGrpName, dataName).setDouble(value);
   }
 
-  void updateBoolean(String tabName, String dataName, boolean value) {
+  void updateBoolean(String tabName, String dataGrpName, String dataName, boolean value) {
     TestingDashboardTab tab = getTab(tabName);
     if (tab == null) {
       System.out.println("WARNING: Subsystem for data does not exist!");
       return;
     }
-    tab.dataTable.getEntry(dataName).setBoolean(value);
+    tab.dataTable.getEntry(dataGrpName, dataName).setBoolean(value);
   }
 
-  void updateString(String tabName, String dataName, String value) {
+  void updateString(String tabName, String dataGrpName, String dataName, String value) {
     TestingDashboardTab tab = getTab(tabName);
     if (tab == null) {
       System.out.println("WARNING: Subsystem for data does not exist!");
       return;
     }
-    tab.dataTable.getEntry(dataName).setString(value);
+    tab.dataTable.getEntry(dataGrpName, dataName).setString(value);
   }
 
-   double getNumber(String tabName, String dataName) {
+   double getNumber(String tabName, String dataGrpName, String dataName) {
     TestingDashboardTab tab = getTab(tabName);
     if (tab == null) {
       System.out.println("WARNING: Subsystem for data does not exist!");
       return 0;
     }
     if (initialized) {
-      return tab.dataTable.getEntry(dataName).getDouble(0.0);
+      return tab.dataTable.getEntry(dataGrpName, dataName).getDouble(0.0);
     } else {
-      return tab.dataTable.getDefaultNumberValue(dataName);
+      return tab.dataTable.getDefaultNumberValue(dataGrpName, dataName);
     }
   }
 
-  boolean getBoolean(String tabName, String dataName) {
+  boolean getBoolean(String tabName, String dataGrpName, String dataName) {
     TestingDashboardTab tab = getTab(tabName);
     if (tab == null) {
       System.out.println("WARNING: Subsystem for data does not exist!");
       return false;
     }
     if (initialized) {
-      return tab.dataTable.getEntry(dataName).getBoolean(false);
+      return tab.dataTable.getEntry(dataGrpName, dataName).getBoolean(false);
     } else {
-      return tab.dataTable.getDefaultBooleanValue(dataName);
+      return tab.dataTable.getDefaultBooleanValue(dataGrpName, dataName);
     }
   }
 
-  String getString(String tabName, String dataName) {
+  String getString(String tabName, String dataGrpName, String dataName) {
     TestingDashboardTab tab = getTab(tabName);
     if (tab == null) {
       System.out.println("WARNING: Subsystem for data does not exist!");
       return "";
     }
     if (initialized) {
-      return tab.dataTable.getEntry(dataName).getString("");
+      return tab.dataTable.getEntry(dataGrpName, dataName).getString("");
     } else {
-      return tab.dataTable.getDefaultStringValue(dataName);
+      return tab.dataTable.getDefaultStringValue(dataGrpName, dataName);
     }
   }
 
@@ -230,11 +232,15 @@ public class TestingDashboard {
       while (itd.hasNext()) {
         String dataGrpName = itd.next();
         System.out.println("Creating \"" + dataGrpName + "\" data group");
-        ArrayList<String> dataList = tdt.dataTable.getDataList(dataGrpName);
+
+        @SuppressWarnings("unchecked")
+        ArrayList<String> dataList = (ArrayList<String>)tdt.dataTable.getDataList(dataGrpName).names.clone();
         Collections.sort(dataList);
+
         ShuffleboardLayout layout = tdt.tab.getLayout(dataGrpName, BuiltInLayouts.kList);
         layout.withPosition(colpos,0);
         layout.withSize(8,dataList.size());
+
         for (int j = 0; j < dataList.size(); j++) {
           String entryName = dataList.get(j);
           double defaultNumberValue = 0;
@@ -242,26 +248,26 @@ public class TestingDashboard {
           boolean defaultBooleanValue = false;
           Sendable sendable;
           GenericEntry entry;
-          int type = tdt.dataTable.getType(entryName);
+          TDValType type = tdt.dataTable.getType(dataGrpName, entryName);
           switch (type) {
-            case TestingDashboardDataTable.TYPE_NUMBER:
-              defaultNumberValue = tdt.dataTable.getDefaultNumberValue(entryName);
+            case NUMBER:
+              defaultNumberValue = tdt.dataTable.getDefaultNumberValue(dataGrpName, entryName);
               entry = layout.add(entryName, defaultNumberValue).getEntry();
-              tdt.dataTable.addEntry(entryName, entry);
+              tdt.dataTable.addEntry(dataGrpName, entryName, entry);
               break;
-            case TestingDashboardDataTable.TYPE_STRING:
-              defaultStringValue = tdt.dataTable.getDefaultStringValue(entryName);
+            case STRING:
+              defaultStringValue = tdt.dataTable.getDefaultStringValue(dataGrpName, entryName);
               entry = layout.add(entryName, defaultStringValue).getEntry();
-              tdt.dataTable.addEntry(entryName, entry);
+              tdt.dataTable.addEntry(dataGrpName, entryName, entry);
               break;
-            case TestingDashboardDataTable.TYPE_SENDABLE:
-              sendable = tdt.dataTable.getDefaultSendableValue(entryName);
+            case SENDABLE:
+              sendable = tdt.dataTable.getDefaultSendableValue(dataGrpName, entryName);
               layout.add(entryName, sendable);
               break;
-            case TestingDashboardDataTable.TYPE_BOOLEAN:
-              defaultBooleanValue = tdt.dataTable.getDefaultBooleanValue(entryName);
+            case BOOLEAN:
+              defaultBooleanValue = tdt.dataTable.getDefaultBooleanValue(dataGrpName, entryName);
               entry = layout.add(entryName, defaultBooleanValue).getEntry();
-              tdt.dataTable.addEntry(entryName, entry);
+              tdt.dataTable.addEntry(dataGrpName, entryName, entry);
               break;
             default:
               System.out.println("ERROR: Type is " + type + " for data item \"" + entryName + "\"");

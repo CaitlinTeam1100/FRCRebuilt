@@ -47,7 +47,7 @@ public class TDBoolean implements TDValue {
    */
   public boolean get() {
     if (!m_needsPost) {
-      m_val = TestingDashboard.getInstance().getBoolean(m_tabName, m_dataName);
+      m_val = TestingDashboard.getInstance().getBoolean(m_tabName, m_groupName, m_dataName);
     }
     return m_val;
   }
@@ -56,7 +56,7 @@ public class TDBoolean implements TDValue {
   {
     if (m_needsPost)
     {
-      TestingDashboard.getInstance().updateBoolean(m_tabName, m_dataName, m_val);
+      TestingDashboard.getInstance().updateBoolean(m_tabName, m_groupName, m_dataName, m_val);
       m_needsPost = false;
     }
   }

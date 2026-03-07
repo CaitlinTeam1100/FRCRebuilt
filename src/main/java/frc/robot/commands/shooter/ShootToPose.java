@@ -1,15 +1,20 @@
 package frc.robot.commands.shooter;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import frc.robot.subsystems.Drive;
 import frc.robot.subsystems.LED;
 import frc.robot.subsystems.Shooter;
+import frc.robot.subsystems.Vision;
 import frc.robot.subsystems.LED.LEDPattern;
 import frc.robot.subsystems.LED.LEDSection.Priority;
 import frc.robot.testingdashboard.Command;
@@ -19,19 +24,29 @@ import frc.robot.utils.TrajectorySolver;
 import frc.robot.utils.TrajectorySolver.SolveType;
 import frc.robot.utils.TrajectorySolver.TrajectoryConditions;
 import frc.robot.utils.TrajectorySolver.TrajectoryParameters;
+import frc.robot.utils.vision.VisionConfig;
+import frc.robot.utils.vision.VisionEstimationResult;
 
 public class ShootToPose extends Command {
     private final Shooter m_Shooter;
+    private final Vision m_Vision;
     private final Drive m_Drive;
+
+    private Transform3d m_cameraToTurret;
+    private Transform3d m_chassisToTurret;
+
     private final Supplier<Pose3d> m_targetSupplier;
 
     private Field2d m_trajectoryDisplay;
     private final int m_displayRes;
 
+    private String m_cameraName;
+
     public ShootToPose(Supplier<Pose3d> targetSupplier) {
         super(Shooter.getInstance(), "Targeted Shooting", "ShootToPose");
 
         m_Shooter = Shooter.getInstance();
+        m_Vision = Vision.getInstance();
         m_Drive = Drive.getInstance();
         m_targetSupplier = targetSupplier;
 
@@ -41,12 +56,33 @@ public class ShootToPose extends Command {
 
         m_displayRes = 32;
 
-        // Drive isn't a requirement - it's used for reading only
+        m_cameraName = "Arducam_OV9782_D";
+
+        // Drive/Vision isn't a requirement - it's used for reading only
         addRequirements(m_Shooter);
     }
 
     @Override 
-    public void initialize() {}
+    public void initialize() {
+        Configuration cfg = Configuration.getInstance();
+        m_chassisToTurret = new Transform3d(
+            new Pose3d(),
+            new Pose3d(
+                new Translation3d(
+                    cfg.getDouble("Shooter", "turretPositionX"),
+                    cfg.getDouble("Shooter", "turretPositionY"),
+                    cfg.getDouble("Shooter", "turretPositionZ")
+                ), Rotation3d.kZero)
+        );
+
+        List<VisionConfig> configs = cfg.getVisionConfigs();
+
+        for (VisionConfig config : configs) {
+            if (config.cameraName.equals(m_cameraName)) {
+                m_cameraToTurret = new Transform3d(config.cameraTranslation, config.cameraRotation).inverse();
+            }
+        }
+    }
 
     @Override
     public void execute() {
@@ -54,18 +90,18 @@ public class ShootToPose extends Command {
         if (target == null) return;
 
         Configuration cfg = Configuration.getInstance();
-        Pose3d chassisPose = new Pose3d(m_Drive.getPose());
-        Pose3d turretPose = new Pose3d(
-            cfg.getDouble(m_Shooter.getName(), "turretPositionX"),
-            cfg.getDouble(m_Shooter.getName(), "turretPositionY"),
-            cfg.getDouble(m_Shooter.getName(), "turretPositionZ"),
-            Rotation3d.kZero
-        );
-
-        Pose3d trajectoryStart = turretPose.relativeTo(chassisPose);
+        Optional<VisionEstimationResult> result = m_Vision.getLatestFromCamera(m_cameraName);
+        Pose3d turretPose;
+        if (result.isPresent()) {
+            Pose3d cameraPose = result.get().estimatedPose;
+            turretPose = cameraPose.transformBy(m_cameraToTurret);
+        } else {
+            Pose3d chassisPose = new Pose3d(m_Drive.getPose());
+            turretPose = chassisPose.transformBy(m_chassisToTurret);
+        }
 
         TrajectoryConditions conditions = new TrajectoryConditions();
-        conditions.start = trajectoryStart;
+        conditions.start = turretPose;
         conditions.target = target;
         conditions.theta = Math.PI/4;
         
@@ -82,12 +118,12 @@ public class ShootToPose extends Command {
             m_Shooter.chimneyStop();
         }
 
-        updateTrajectoryDisplay(conditions);
+        updateTrajectoryDisplay(conditions, params);
     }
 
-    private void updateTrajectoryDisplay(TrajectoryConditions conditions) {
+    private void updateTrajectoryDisplay(TrajectoryConditions conditions, TrajectoryParameters params) {
         for (int i = 0; i < m_displayRes; i++) {
-            double t = (conditions.time/(double)m_displayRes)/(i/(double)m_displayRes);
+            double t = i/(double)(m_displayRes-1);
             Pose2d pose = conditions.start.interpolate(conditions.target, t).toPose2d();
             m_trajectoryDisplay.getObject("point" + i).setPose(pose);
         }

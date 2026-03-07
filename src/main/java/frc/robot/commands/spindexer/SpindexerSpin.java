@@ -14,7 +14,7 @@ public class SpindexerSpin extends Command{
         super(Spindexer.getInstance(), "Spindexer", "SpindexerSpin");
 
         m_spindexer = Spindexer.getInstance();
-        m_spindexerSpeed = Configuration.getInstance().getDouble("Spindex", "spindexSpeed");
+        m_spindexerSpeed = Configuration.getInstance().getDouble("Spindexer", "spindexerSpeed");
 
         addRequirements(m_spindexer);
     }
@@ -24,7 +24,6 @@ public class SpindexerSpin extends Command{
 
     @Override
     public void execute() {
-        
         m_spindexer.spinIn(m_spindexerSpeed);
     }
 

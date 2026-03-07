@@ -1,17 +1,11 @@
 package frc.robot.subsystems;
 
-import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkBase;
-import com.revrobotics.spark.SparkFlex;
-import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
-import com.revrobotics.spark.config.SparkMaxConfig;
-import com.revrobotics.spark.config.SparkFlexConfig;
+import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.PersistMode;
 import com.revrobotics.ResetMode;
 
-import frc.robot.Constants;
-import frc.robot.RobotMap;
 import frc.robot.testingdashboard.TDNumber;
 import frc.robot.utils.Configuration;
 import frc.robot.utils.sensing.SparkCurrentLimitDetector;
@@ -19,51 +13,68 @@ import frc.robot.utils.sensing.SparkCurrentLimitDetector.HardLimitDirection;
 import frc.robot.testingdashboard.SubsystemBase;
 
 
+public class Intake extends SubsystemBase {
+    private static Intake m_Intake = null;
 
-public class Intake extends SubsystemBase{
+	private boolean m_rollerEnabled;
 
-    SparkFlex m_rollerMotor;
-    SparkFlex m_deployMotor1;
-    SparkFlex m_deployMotor2;
-    SparkFlexConfig m_rollerConfig;
-    SparkFlexConfig m_deployerConfig1;
-    SparkFlexConfig m_deployerConfig2;
-    SparkCurrentLimitDetector sparkCurrentLimitDetector;
+    SparkBase m_rollerMotor;
+    SparkBaseConfig m_rollerTopConfig;
+
+	private boolean m_deployerEnabled;
+    
+    SparkBase m_deployMotor1;
+    SparkBase m_deployMotor2;
+
+    SparkBaseConfig m_deployConfig1;
+    SparkBaseConfig m_deployConfig2;
+
+    SparkCurrentLimitDetector m_deployLimitDetector;
 
     boolean m_deploying = false;
     double m_currentSpeed;
 
+    TDNumber m_TDrollerBottomCurrentOutput;
     TDNumber m_TDrollerCurrentOutput;
     TDNumber m_TDdeployerCurrentOutput;
 
-    private static Intake m_Intake = null;
-
     private Intake(){
         super("Intake");
-        if (cfgBool("intakeEnabled") == true){
-            m_rollerMotor = new SparkFlex(cfgInt("intakeRollerCanId"), MotorType.kBrushless);
-            m_deployMotor1 = new SparkFlex(cfgInt("intakeDeployerCanId1"), MotorType.kBrushless);
-            m_deployMotor2 = new SparkFlex(cfgInt("intakeDeployerCanId2"), MotorType.kBrushless);
-            m_rollerConfig = new SparkFlexConfig();
-            m_rollerConfig
-                .idleMode(IdleMode.kCoast)
-                .smartCurrentLimit(cfgInt("intakeRollerStallLimit"), cfgInt("intakeRollerFreeLimit"));
-            m_deployerConfig1 = new SparkFlexConfig();
-            m_deployerConfig1
-                .idleMode(IdleMode.kCoast)
-                .smartCurrentLimit(cfgInt("intakeDeployerStallLimit"), cfgInt("intakeDeployerFreeLimit"));
 
-            m_deployerConfig2 = new SparkFlexConfig();
-            m_deployerConfig2
+		m_rollerEnabled = cfgBool("rollerEnabled");
+		m_deployerEnabled = cfgBool("deployerEnabled");
+
+		if (m_rollerEnabled) {
+      		var rollerTopMotorConfig = config().getMotorController("intakeRollerTop");
+            m_rollerMotor = rollerTopMotorConfig.m_controller;
+
+			m_rollerTopConfig = rollerTopMotorConfig.m_config;
+            m_rollerTopConfig
+                .idleMode(IdleMode.kCoast);
+                //.smartCurrentLimit(cfgInt("rollerStallLimit"), cfgInt("rollerFreeLimit"));
+            m_rollerMotor.configure(m_rollerTopConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+            m_TDrollerCurrentOutput = new TDNumber(this, "Roller", "Measured Current");
+		}
+
+		if (m_deployerEnabled) {
+            var deployConfig1 = config().getMotorController("intakeDeploy1");
+            var deployConfig2 = config().getMotorController("intakeDeploy2");
+
+            m_deployMotor1 = deployConfig1.m_controller;
+            m_deployMotor2 = deployConfig2.m_controller;
+
+            m_deployConfig1 = deployConfig1.m_config;
+            m_deployConfig1
                 .idleMode(IdleMode.kCoast)
-                .smartCurrentLimit(cfgInt("intakeDeployerStallLimit"), cfgInt("intakeDeployerFreeLimit"));
-            m_deployerConfig2.follow(cfgInt("intakeDeployerCanId1"), cfgBool("intakeDeployer2Invert"));
+                .smartCurrentLimit(cfgInt("deployerStallLimit"), cfgInt("deployerFreeLimit"));
 
-            m_rollerMotor.configure(m_rollerConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-            m_deployMotor1.configure(m_deployerConfig1, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-            m_deployMotor2.configure(m_deployerConfig2, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+            m_deployConfig2 = deployConfig2.m_config;
+            m_deployConfig2.follow(m_deployMotor1, cfgBool("deployer2Invert"));
 
-            m_TDrollerCurrentOutput = new TDNumber(this, "Intake", "Roller Measured Current");
+            m_deployMotor1.configure(m_deployConfig1, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+            m_deployMotor2.configure(m_deployConfig2, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
             m_TDdeployerCurrentOutput = new TDNumber(this, "Intake", "Deployer Measured Current");
         }
     }
@@ -75,23 +86,25 @@ public class Intake extends SubsystemBase{
         }
         return m_Intake;
     }
-    //ROLLER METHODS
+
     public void spinIn(double speed) {
+        if (m_rollerMotor != null) {
+            m_rollerMotor.set(-speed);
+        }
+    }
+
+    public void spinOut(double speed) {
         if (m_rollerMotor != null) {
             m_rollerMotor.set(speed);
         }
     }
-    public void spinOut(double speed) {
-        if (m_rollerMotor != null) {
-            m_rollerMotor.set(-1 * speed);
-        }
-    }
+
     public void stop() {
         if (m_rollerMotor != null) {
-            m_rollerMotor.set(-0);
+            m_rollerMotor.set(0);
         }
     }
-    //DEPLOYER METHODS
+
     public void deploy(double speed) {
         m_deploying = true;
         m_currentSpeed = speed;
@@ -101,38 +114,34 @@ public class Intake extends SubsystemBase{
         m_deploying = false;
         m_currentSpeed = speed;
     }
-    
-    public boolean isDeployed(){
-        
-        if (m_deployMotor1.getEncoder().getPosition() > cfgDbl("intakeDeployedThreshold")){
-            return true;
-        } else {
-            return false;
-        }
-    }
-    @Override
-    public void periodic() {
-        if (m_deploying){
-            if (sparkCurrentLimitDetector.check() != HardLimitDirection.kForward){
+
+	private void runRoller() {
+		m_TDrollerCurrentOutput.set(m_rollerMotor.getOutputCurrent());
+	}
+
+	private void runDeployer() {
+        if (m_deploying) {
+            if (m_deployLimitDetector.check() != HardLimitDirection.kForward){
                 m_deployMotor1.set(m_currentSpeed);
             } else {
-                m_deployMotor1.set(-0);
+                m_deployMotor1.set(0);
             }
         } else {
-            if (sparkCurrentLimitDetector.check() != HardLimitDirection.kReverse){
-                m_deployMotor1.set(-1 * m_currentSpeed);
+            if (m_deployLimitDetector.check() != HardLimitDirection.kReverse){
+                m_deployMotor1.set(-m_currentSpeed);
             } else {
-                m_deployMotor1.set(-0);
+                m_deployMotor1.set(0);
             }
         }
+        m_TDdeployerCurrentOutput.set(m_deployMotor1.getOutputCurrent());
+	}
+    
+    @Override
+    public void periodic() {
+        if (m_rollerEnabled) runRoller();
+		if (m_deployerEnabled) runDeployer();
 
-        if (cfgBool("intakeEnabled") == true) {
-            m_TDrollerCurrentOutput.set(m_rollerMotor.getOutputCurrent());
-            m_TDdeployerCurrentOutput.set(m_deployMotor1.getOutputCurrent());
-        }
         super.periodic();
-
-        
     }
     
 }

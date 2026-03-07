@@ -18,7 +18,7 @@ public class TDString implements TDValue {
       m_groupName = groupName;
       m_dataName = dataName;
       m_val = "";
-      TestingDashboard.getInstance().registerString(m_tabName, groupName, dataName, m_val);
+      TestingDashboard.getInstance().registerString(m_tabName, m_groupName, m_dataName, m_val);
       subsystem.registerValue(this);
       get();
     }
@@ -47,7 +47,7 @@ public class TDString implements TDValue {
      */
     public String get() {
       if (!m_needsPost) {
-        m_val = TestingDashboard.getInstance().getString(m_tabName, m_dataName);
+        m_val = TestingDashboard.getInstance().getString(m_tabName, m_groupName, m_dataName);
       }
       return m_val;
     }
@@ -56,7 +56,7 @@ public class TDString implements TDValue {
     {
       if (m_needsPost)
       {
-        TestingDashboard.getInstance().updateString(m_tabName, m_dataName, m_val);
+        TestingDashboard.getInstance().updateString(m_tabName, m_groupName, m_dataName, m_val);
         m_needsPost = false;
       }
     }

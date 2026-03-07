@@ -20,114 +20,132 @@ import edu.wpi.first.util.sendable.Sendable;
  * tab.
  */
 public class TestingDashboardDataTable {
-  public static final int TYPE_NUMBER = 0;
-  public static final int TYPE_STRING = 1;
-  public static final int TYPE_SENDABLE = 2;
-  public static final int TYPE_BOOLEAN = 3;
-  Hashtable<String, ArrayList<String>> table;
-  ArrayList<String> names;
-  Hashtable<String, Integer> type;
-  Hashtable<String, GenericEntry> entries;
-  Hashtable<String, String> defaultString;
-  Hashtable<String, Double> defaultDouble;
-  Hashtable<String, Boolean> defaultBoolean;
-  Hashtable<String, Object> defaultSendable;
+  public enum TDValType  {
+    NUMBER,
+    STRING,
+    SENDABLE,
+    BOOLEAN
+  }
+
+  private final Hashtable<String, DataGroup> table;
+
+  public static class DataGroup {
+    public final ArrayList<String> names;
+    public final Hashtable<String, GenericEntry> entries;
+    public final Hashtable<String, TDValType> type;
+    public final Hashtable<String, String> defaultString;
+    public final Hashtable<String, Double> defaultDouble;
+    public final Hashtable<String, Boolean> defaultBoolean;
+    public final Hashtable<String, Object> defaultSendable;
+
+    public DataGroup() {
+      names = new ArrayList<String>();
+      entries = new Hashtable<String, GenericEntry>();
+      type = new Hashtable<String, TDValType>();
+      defaultString = new Hashtable<String, String>();
+      defaultDouble = new Hashtable<String, Double>();
+      defaultBoolean = new Hashtable<String, Boolean>();
+      defaultSendable = new Hashtable<String, Object>();
+    }
+  }
+
   public TestingDashboardDataTable() {
-    table = new Hashtable<String, ArrayList<String>>();
-    names = new ArrayList<String>();
-    entries = new Hashtable<String, GenericEntry>();
-    type = new Hashtable<String, Integer>();
-    defaultString = new Hashtable<String, String>();
-    defaultDouble = new Hashtable<String, Double>();
-    defaultBoolean = new Hashtable<String, Boolean>();
-    defaultSendable = new Hashtable<String, Object>();
+    table = new Hashtable<String, DataGroup>();
   }
 
   public boolean addName(String grp, String name) {
     if (table.containsKey(grp)) {
-      ArrayList<String> l = table.get(grp);
-      if (!l.contains(name)) {
-        l.add(name);
-      }
-      else {
+      DataGroup group = table.get(grp);
+      if (!group.names.contains(name)) {
+        group.names.add(name);
+      } else {
         return false;
       }
     } else {
-      ArrayList<String> l = new ArrayList<String>();
-      l.add(name);
-      table.put(grp, l);
+      DataGroup group = new DataGroup();
+      group.names.add(name);
+      table.put(grp, group);
     }
-    names.add(name);
     return true;
   }
   
-  public int getType(String name) {
-      return type.get(name).intValue();
+  public TDValType getType(String grpName, String name) {
+    return table.get(grpName).type.get(name);
   }
 
-  public void addDefaultStringValue(String name, String value ) {
-    if (names.contains(name)) {
-        type.put(name,TYPE_STRING);
-        defaultString.put(name,value);
+  public void addDefaultStringValue(String grpName, String name, String value) {
+    DataGroup group = table.get(grpName);
+    if (group.names.contains(name)) {
+        group.type.put(name,TDValType.STRING);
+        group.defaultString.put(name,value);
     }
   }
 
-  public void addDefaultNumberValue(String name, double value) {
-    if (names.contains(name)) {
-        type.put(name,Integer.valueOf(TYPE_NUMBER));
-        defaultDouble.put(name,Double.valueOf(value));
+  public void addDefaultNumberValue(String grpName, String name, double value) {
+    DataGroup group = table.get(grpName);
+    if (group.names.contains(name)) {
+        group.type.put(name,TDValType.NUMBER);
+        group.defaultDouble.put(name,Double.valueOf(value));
     }
   }
 
-  public void addDefaultBooleanValue(String name, boolean value) {
-    if (names.contains(name)) {
-        type.put(name,Integer.valueOf(TYPE_BOOLEAN));
-        defaultBoolean.put(name,Boolean.valueOf(value));
+  public void addDefaultBooleanValue(String grpName, String name, boolean value) {
+    DataGroup group = table.get(grpName);
+    if (group.names.contains(name)) {
+        group.type.put(name,TDValType.BOOLEAN);
+        group.defaultBoolean.put(name,Boolean.valueOf(value));
     }
   }
   
-  public void addDefaultSendableValue(String name, Sendable sendable) {
-    if (names.contains(name)) {
-        type.put(name,TYPE_SENDABLE);
-        defaultSendable.put(name, sendable);
+  public void addDefaultSendableValue(String grpName, String name, Sendable sendable) {
+    DataGroup group = table.get(grpName);
+    if (group.names.contains(name)) {
+        group.type.put(name,TDValType.SENDABLE);
+        group.defaultSendable.put(name, sendable);
     }
   }
 
-  public String getDefaultStringValue(String name) {
-    return defaultString.get(name);
+  public String getDefaultStringValue(String grpName, String name) {
+    DataGroup group = table.get(grpName);
+    return group.defaultString.get(name);
   }
 
-  public double getDefaultNumberValue(String name) {
-    return defaultDouble.get(name).doubleValue();
+  public double getDefaultNumberValue(String grpName, String name) {
+    DataGroup group = table.get(grpName);
+    return group.defaultDouble.get(name).doubleValue();
   }
 
-  public boolean getDefaultBooleanValue(String name) {
-    return defaultBoolean.get(name).booleanValue();
+  public boolean getDefaultBooleanValue(String grpName, String name) {
+    DataGroup group = table.get(grpName);
+    return group.defaultBoolean.get(name).booleanValue();
   }
 
-  public Sendable getDefaultSendableValue(String name) {
-    return (Sendable) defaultSendable.get(name);
+  public Sendable getDefaultSendableValue(String grpName, String name) {
+    DataGroup group = table.get(grpName);
+    return (Sendable)group.defaultSendable.get(name);
   }
 
   /*
    *  This function adds the GenericEntry for a given
    *  named data item.
    */
-  public void addEntry(String name, GenericEntry entry) {
-      if (names.contains(name)) {
-          entries.put(name,entry);
-      }
+  public void addEntry(String grpName, String name, GenericEntry entry) {
+    DataGroup group = table.get(grpName);
+    if (group.names.contains(name)) {
+      group.entries.put(name,entry);
+    }
   }
 
-  public GenericEntry getEntry(String str) {
-      return entries.get(str);
+  public GenericEntry getEntry(String grpName, String str) {
+    DataGroup group = table.get(grpName);
+    return group.entries.get(str);
   }
 
   public Enumeration<String> getDataGroups() {
     return table.keys();
   }
 
-  public ArrayList<String> getDataList(String dataGrgName) {
+  public DataGroup getDataList(String dataGrgName) {
     return table.get(dataGrgName);
   }
 }
