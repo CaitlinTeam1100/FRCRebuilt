@@ -56,7 +56,7 @@ public class ShootToPose extends Command {
 
         m_displayRes = 32;
 
-        m_cameraName = "Arducam_OV9782_D";
+        m_cameraName = "TurretCamera";
 
         // Drive/Vision isn't a requirement - it's used for reading only
         addRequirements(m_Shooter);
@@ -79,7 +79,13 @@ public class ShootToPose extends Command {
 
         for (VisionConfig config : configs) {
             if (config.cameraName.equals(m_cameraName)) {
-                m_cameraToTurret = new Transform3d(config.cameraTranslation, config.cameraRotation).inverse();
+                m_cameraToTurret = new Transform3d(
+                    new Pose3d(
+                        config.cameraTranslation,
+                        config.cameraRotation
+                    ),
+                    new Pose3d()
+                );
             }
         }
     }
@@ -94,10 +100,11 @@ public class ShootToPose extends Command {
         Pose3d turretPose;
         if (result.isPresent()) {
             Pose3d cameraPose = result.get().estimatedPose;
-            turretPose = cameraPose.transformBy(m_cameraToTurret);
+            turretPose = cameraPose;//cameraPose.transformBy(m_cameraToTurret);
         } else {
             Pose3d chassisPose = new Pose3d(m_Drive.getPose());
             turretPose = chassisPose.transformBy(m_chassisToTurret);
+            return;
         }
 
         TrajectoryConditions conditions = new TrajectoryConditions();
@@ -110,6 +117,11 @@ public class ShootToPose extends Command {
         m_Shooter.setTurretTarget(params.theta_yaw, 0);
         m_Shooter.setHoodTarget(m_Shooter.pitchToHood(params.theta_pitch));
         m_Shooter.setFlywheelTarget(m_Shooter.velocityToRPM(params.velocity));
+
+        System.out.println("Turret target: " + params.theta_yaw +
+                           "Hood target: " + params.theta_pitch +
+                           "Flywheel target: " + params.velocity);
+
         if (m_Shooter.turretAtTarget() && m_Shooter.flywheelAtTarget() && m_Shooter.hoodAtTarget()) {
 			LED.getInstance().setPattern(1, LEDPattern.kCheckeredBlinkGreen, Priority.INFO);
             m_Shooter.chimneySpeed(cfg.getDouble("shooter", "chimneyUpSpeed"));
@@ -124,7 +136,9 @@ public class ShootToPose extends Command {
     private void updateTrajectoryDisplay(TrajectoryConditions conditions, TrajectoryParameters params) {
         for (int i = 0; i < m_displayRes; i++) {
             double t = i/(double)(m_displayRes-1);
-            Pose2d pose = conditions.start.interpolate(conditions.target, t).toPose2d();
+            Translation3d inter = conditions.start.getTranslation()
+                .interpolate(conditions.target.getTranslation(), t);
+            Pose2d pose = new Pose2d(inter.toTranslation2d(), Rotation2d.kZero);
             m_trajectoryDisplay.getObject("point" + i).setPose(pose);
         }
     }

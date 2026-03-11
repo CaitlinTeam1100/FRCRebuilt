@@ -125,7 +125,7 @@ public final class Constants {
     }
 
     public static final class VisionConstants {
-        public static final AprilTagFieldLayout kTagLayout = AprilTagFieldLayout.loadField(AprilTagFields.kDefaultField);
+        public static final AprilTagFieldLayout kTagLayout = AprilTagFieldLayout.loadField(AprilTagFields.k2026RebuiltWelded);
 
         // TODO: experiment to find actual stddevs
         public static final Matrix<N3, N1> kSingleTagStdDevs = VecBuilder.fill(4, 4, 8);
@@ -162,7 +162,7 @@ public final class Constants {
         public static final double kTurretPlanetaryRatio = Configuration.getInstance().getDouble("Shooter", "turretPlanetaryRatio");
         public static final double kTurretPinionTeeth = Configuration.getInstance().getDouble("Shooter", "turretPinionTeeth");
         public static final double kTurretGearTeeth = Configuration.getInstance().getDouble("Shooter", "turretGearTeeth");
-        public static final double kTurretPositionFactor = 2*Math.PI * kTurretPinionTeeth / (kTurretGearTeeth * kTurretPlanetaryRatio);
+        public static final double kTurretPositionFactor = 1.0/Configuration.getInstance().getDouble("Shooter", "turretRatio") * 2 * Math.PI;//2*Math.PI * kTurretPinionTeeth / (kTurretGearTeeth * kTurretPlanetaryRatio);
 
         public static final double kTurretMaxAccel = 10*Math.PI;
         public static final double kTurretMaxVelocity = 2*Math.PI;

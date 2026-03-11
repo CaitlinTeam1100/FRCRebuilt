@@ -2,8 +2,10 @@ package frc.robot;
 
 import java.util.function.Supplier;
 
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.RobotBase;
 import edu.wpi.first.wpilibj.XboxController;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
@@ -17,12 +19,14 @@ import frc.robot.commands.shooter.CalibrateTurretFull;
 import frc.robot.commands.shooter.ChimneyDown;
 import frc.robot.commands.shooter.ChimneyUp;
 import frc.robot.commands.shooter.ManualShooterControl;
+import frc.robot.commands.shooter.ShootToPose;
 import frc.robot.commands.spindexer.SpindexerReverse;
 import frc.robot.commands.spindexer.SpindexerSpin;
 import frc.robot.subsystems.Climber;
 import frc.robot.subsystems.Drive;
 import frc.robot.subsystems.Shooter;
 import frc.robot.utils.TriggerBuilder;
+import frc.robot.utils.FieldUtils;
 import frc.robot.utils.Referrable;
 import frc.robot.utils.drive.SwerveDriveInputs;
 import frc.robot.utils.TriggerBuilder.RumbleIndicator;
@@ -125,17 +129,29 @@ public class OI {
 
 		SwitchIndicator operatorIndicator = new RumbleIndicator(m_operatorXboxController.getHID());
 		new TriggerBuilder<Submap>(m_operatorSubmap)
-			.map(m_operatorXboxController.a(), new ManualShooterControl(), Trigger::toggleOnTrue)
+			.beginSubmap(Submap.AUTO)
+				.whileTrue(m_operatorXboxController.rightBumper(), Commands.parallel(
+					new ChimneyUp(),
+					new SpindexerSpin(),
+					new IntakeIn())
+				)
 
-			.whileTrue(m_operatorXboxController.y(), Commands.parallel(
-				new ChimneyUp(),
-				new SpindexerSpin(),
-				new IntakeIn())
-			)
+				.whileTrue(m_operatorXboxController.leftBumper(), new ShootToPose(() -> {
+					return FieldUtils.getInstance().getHubPose(DriverStation.getAlliance().orElse(Alliance.Blue));
+				}))
 
-			.onTrue(m_operatorXboxController.povLeft(), new StopTurretCalibration())
-			.onTrue(m_operatorXboxController.povRight(), new CalibrateTurretFull())
-			.onTrue(m_operatorXboxController.povDown(), new StopTurretCalibration())
+				.switchSubmap(operatorIndicator, m_operatorXboxController.start(), Submap.MANUAL)
+			.endSubmap()
+
+			.beginSubmap(Submap.MANUAL)
+				.map(m_operatorXboxController.a(), new ManualShooterControl(), Trigger::toggleOnTrue)
+
+				.onTrue(m_operatorXboxController.povLeft(), new StopTurretCalibration())
+				.onTrue(m_operatorXboxController.povRight(), new CalibrateTurretFull())
+				.onTrue(m_operatorXboxController.povDown(), new StopTurretCalibration())
+
+				.switchSubmap(operatorIndicator, m_operatorXboxController.start(), Submap.AUTO)
+			.endSubmap()
 
 			.register();
     }
