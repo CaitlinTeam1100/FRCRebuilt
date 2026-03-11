@@ -14,7 +14,6 @@ import frc.robot.testingdashboard.TDNumber;
 import frc.robot.testingdashboard.TDSendable;
 import frc.robot.utils.drive.SwerveDriveInputs;
 
-/* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
 public class JoystickHeadingDrive extends Command {
   private SwerveDriveInputs m_DriveInputs;
   private PIDController m_headingController;
@@ -47,17 +46,26 @@ public class JoystickHeadingDrive extends Command {
   public void execute() {
     double rotationPower = 0.0;
     rotationPower = getRotationFromTransalation();
-    m_drive.drive(
-      -MathUtil.applyDeadband(m_DriveInputs.getX(), OIConstants.kDriveDeadband),
-      -MathUtil.applyDeadband(m_DriveInputs.getY(), OIConstants.kDriveDeadband),
-      rotationPower,
-      true, false);
+    double currentHeading = m_drive.getHeading();
+    if (MathUtil.isNear(rotationPower, currentHeading, 30.0)) {
+      m_drive.drive(
+        -MathUtil.applyDeadband(m_DriveInputs.getX(), OIConstants.kDriveDeadband),
+        -MathUtil.applyDeadband(m_DriveInputs.getY(), OIConstants.kDriveDeadband),
+        rotationPower,
+        true, false);
+    } else {
+      m_drive.drive(
+        0.0,
+        0.0,
+        rotationPower,
+        true, false);
+    }
   }
 
   private double getRotationFromTransalation() {
     double x = -MathUtil.applyDeadband(m_DriveInputs.getX(), OIConstants.kDriveDeadband);
     double y = -MathUtil.applyDeadband(m_DriveInputs.getY(), OIConstants.kDriveDeadband);
-    Rotation2d heading = new Rotation2d(x, y);
+    Rotation2d heading = new Rotation2d(x, y).plus(Rotation2d.k180deg);
     double currentHeading = m_drive.getHeading();
     return m_headingController.calculate(currentHeading, heading.getDegrees());
   }

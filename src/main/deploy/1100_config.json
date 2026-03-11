@@ -384,9 +384,19 @@
         {"varName" : "turretPinionTeeth", "value" : 12},
         {"varName" : "turretGearTeeth", "value" : 68},
 
+        {"varName" : "turretRatio", "value" : 77},
+
         {"varName" : "turretDeadzoneStart", "value": 6.28319},
         {"varName" : "turretHardLimit", "value" : 9.942478},
         {"varName" : "turretSoftLimit", "value" : 9.942478},
+
+        {"varName" : "turretForwardHardLimit", "value" : 3.665},
+        {"varName" : "turretReverseHardLimit", "value" : -3.665},
+        {"varName" : "turretCurrentTrip", "value" : 20},
+        {"varName" : "turretZeroSpeedTolerance", "value" : 0.05},
+
+        {"varName" : "turretStallCurrentLimit", "value" : 25},
+        {"varName" : "turretFreeCurrentLimit", "value" : 30},
 
         {"varName" : "turretPositionX", "value" : 0},
         {"varName" : "turretPositionY", "value" : 0},
@@ -423,10 +433,49 @@
 	],
 
 	"Climber" : [
-		{"varName" : "climberEnabled", "value" : false}
+		{"varName" : "climberEnabled", "value" : true},
+        {"varName" : "climberRatio", "value" : 1},
+
+        {"varName" : "tuneClimber", "value" : true},
+
+        {"varName" : "climberP", "value" : 0},
+        {"varName" : "climberI", "value" : 0},
+        {"varName" : "climberD", "value" : 0},
+        {"varName" : "climberKg", "value" : 0},
+        {"varName" : "climberKs", "value" : 0},
+        {"varName" : "climberKv", "value" : 0},
+        {"varName" : "climberKa", "value" : 0},
+
+        {"varName" : "climberCurrentLimit", "value" : 10},
+        {"varName" : "climberZeroVelocityTolerance", "value" : 0.05},
+        {"varName" : "climberMaxVelocity", "value" : 1},
+        {"varName" : "climberMaxAcceleration", "value" : 1},
+
+        {"varName" : "climberMinPosition", "value" : 0},
+        {"varName" : "climberMaxPosition", "value" : 39.75}
 	],
+    
+    "Vision": [
+        {"varName" : "Enabled", "value" : true}
+    ],
 
 	"visionConfig" : [
+        {
+            "name": "TurretCamera",
+            "translation": {
+                "x": 0.18,
+                "y": 0.0,
+                "z": 0.1479
+            },
+            "angles": {
+                "pitch": 30,
+                "yaw": 0,
+                "roll": 0
+            },
+            "primaryStrat": "MULTI_TAG_PNP_ON_COPROCESSOR",
+            "backupStrat": "CLOSEST_TO_CAMERA_HEIGHT",
+            "includeInPoseEstimates": false
+        }
 	]
 }
 
