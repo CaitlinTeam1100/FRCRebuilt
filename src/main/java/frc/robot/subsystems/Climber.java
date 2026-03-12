@@ -201,30 +201,30 @@ public class Climber extends SubsystemBase {
     m_climberState = m_climberProfile.calculate(Constants.schedulerPeriodTime, m_climberState, m_climberSetpoint);
 
     HardLimitDirection limit = m_climberLimiter.check();
-    double climberPosition = m_climberLeftMotor.getEncoder().getPosition();
+    double climberPosition = m_climberMotor.getEncoder().getPosition();
     if (limit == HardLimitDirection.kFree) {
       double climberFeedForward = m_climberFeedForwardController.calculate(m_climberState.velocity);
-      m_climberLeftMotor.getClosedLoopController().setSetpoint(m_climberState.position, ControlType.kPosition, ClosedLoopSlot.kSlot0,
+      m_climberMotor.getClosedLoopController().setSetpoint(m_climberState.position, ControlType.kPosition, ClosedLoopSlot.kSlot0,
           climberFeedForward);
     } else if (limit == HardLimitDirection.kForward) {
-      if (m_climberLeftMotor.getAppliedOutput() > 0) {
-        m_climberLeftMotor.set(0);
+      if (m_climberMotor.getAppliedOutput() > 0) {
+        m_climberMotor.set(0);
       }
       if (!MathUtil.isNear(Constants.ClimberConstants.kClimberUpperLimitInches, climberPosition,
             Constants.ClimberConstants.kClimberToleranceInches)) {
-        m_climberLeftMotor.getEncoder().setPosition(Constants.ClimberConstants.kClimberUpperLimitInches);
+        m_climberMotor.getEncoder().setPosition(Constants.ClimberConstants.kClimberUpperLimitInches);
       }
       if (m_climberSetpoint.position > climberPosition) {
         m_climberState = new TrapezoidProfile.State(Constants.ClimberConstants.kClimberUpperLimitInches, 0.0);
         m_climberSetpoint = new TrapezoidProfile.State(Constants.ClimberConstants.kClimberUpperLimitInches, 0.0);
       }
     } else if (limit == HardLimitDirection.kReverse) {
-      if (m_climberLeftMotor.getAppliedOutput() < 0) {
-        m_climberLeftMotor.set(0);
+      if (m_climberMotor.getAppliedOutput() < 0) {
+        m_climberMotor.set(0);
       }
       if (!MathUtil.isNear(Constants.ClimberConstants.kClimberLowerLimitInches, climberPosition,
             Constants.ClimberConstants.kClimberToleranceInches)) {
-        m_climberLeftMotor.getEncoder().setPosition(Constants.ClimberConstants.kClimberLowerLimitInches);
+        m_climberMotor.getEncoder().setPosition(Constants.ClimberConstants.kClimberLowerLimitInches);
       }
       if (m_climberSetpoint.position<climberPosition) {
         m_climberState = new TrapezoidProfile.State(Constants.ClimberConstants.kClimberLowerLimitInches, 0.0);

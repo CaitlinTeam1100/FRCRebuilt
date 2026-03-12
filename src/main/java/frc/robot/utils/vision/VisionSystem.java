@@ -112,7 +112,7 @@ public class VisionSystem {
 
             if (visionEst.isPresent()) {
                 EstimatedRobotPose est = visionEst.get();
-                double ambiguity = 0;//getResultAmbiguity(est, latestResult);
+                double ambiguity = getResultAmbiguity(est, latestResult);
                 double latestTimestamp = latestResult.getTimestampSeconds();
 
                 boolean valid = !m_includeInPoseEstimates || validateResult(est, ambiguity);
@@ -125,6 +125,8 @@ public class VisionSystem {
                 if (valid) {
                     Matrix<N3,N1> stdDevs = getEstimationStdDevs(est.estimatedPose.toPose2d());
                     result = Optional.of(new VisionEstimationResult(est.estimatedPose, latestTimestamp, ambiguity, stdDevs, latestResult));
+                } else {
+                    //System.out.println("invalid: " + m_camera.getName());
                 }
             }
         }
@@ -196,18 +198,18 @@ public class VisionSystem {
            estPose.estimatedPose.getX() > VisionConstants.kTagLayout.getFieldLength() ||
            estPose.estimatedPose.getY() < 0 ||
            estPose.estimatedPose.getY() > VisionConstants.kTagLayout.getFieldWidth()) {
-            System.out.println("pose oof");
+            System.out.println("pose oof " + estPose.estimatedPose);
             return false;
         }
         //Reject if robot is too too far from ground level
         if(Math.abs(estPose.estimatedPose.getZ()) > VisionConstants.kMaxZError) {
-            System.out.println("pose too high");
+            System.out.println("pose too high " + estPose.estimatedPose);
             return false;
         }
         //Reject if robot is tilted too much
         if(Math.abs(estPose.estimatedPose.getRotation().getX()) > VisionConstants.kMaxRollError ||
            Math.abs(estPose.estimatedPose.getRotation().getY()) > VisionConstants.kMaxPitchError) {
-            System.out.println("pose too tilted");
+            //System.out.println("pose too tilted roll " + estPose.estimatedPose.getRotation().getX() + " pitch " + estPose.estimatedPose.getRotation().getY());
             return false;
         }
 

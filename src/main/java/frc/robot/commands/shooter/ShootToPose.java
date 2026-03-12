@@ -24,7 +24,6 @@ import frc.robot.utils.TrajectorySolver;
 import frc.robot.utils.TrajectorySolver.SolveType;
 import frc.robot.utils.TrajectorySolver.TrajectoryConditions;
 import frc.robot.utils.TrajectorySolver.TrajectoryParameters;
-import frc.robot.utils.vision.VisionConfig;
 import frc.robot.utils.vision.VisionEstimationResult;
 
 public class ShootToPose extends Command {
@@ -74,20 +73,6 @@ public class ShootToPose extends Command {
                     cfg.getDouble("Shooter", "turretPositionZ")
                 ), Rotation3d.kZero)
         );
-
-        List<VisionConfig> configs = cfg.getVisionConfigs();
-
-        for (VisionConfig config : configs) {
-            if (config.cameraName.equals(m_cameraName)) {
-                m_cameraToTurret = new Transform3d(
-                    new Pose3d(
-                        config.cameraTranslation,
-                        config.cameraRotation
-                    ),
-                    new Pose3d()
-                );
-            }
-        }
     }
 
     @Override
@@ -99,8 +84,7 @@ public class ShootToPose extends Command {
         Optional<VisionEstimationResult> result = m_Vision.getLatestFromCamera(m_cameraName);
         Pose3d turretPose;
         if (result.isPresent()) {
-            Pose3d cameraPose = result.get().estimatedPose;
-            turretPose = cameraPose;//cameraPose.transformBy(m_cameraToTurret);
+            turretPose = result.get().estimatedPose;
         } else {
             Pose3d chassisPose = new Pose3d(m_Drive.getPose());
             turretPose = chassisPose.transformBy(m_chassisToTurret);

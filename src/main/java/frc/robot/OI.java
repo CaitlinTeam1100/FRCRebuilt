@@ -19,6 +19,7 @@ import frc.robot.commands.shooter.CalibrateTurretFull;
 import frc.robot.commands.shooter.ChimneyDown;
 import frc.robot.commands.shooter.ChimneyUp;
 import frc.robot.commands.shooter.ManualShooterControl;
+import frc.robot.commands.shooter.ShootSpecified;
 import frc.robot.commands.shooter.ShootToPose;
 import frc.robot.commands.spindexer.SpindexerReverse;
 import frc.robot.commands.spindexer.SpindexerSpin;
@@ -99,18 +100,7 @@ public class OI {
 
 				.whileTrue(m_driverXboxController.leftBumper(), new IntakeIn())
 
-				.whileTrue(m_driverXboxController.rightBumper(), Commands.parallel(
-					new SpindexerSpin(),
-					new ChimneyUp(),
-					Commands.startEnd(
-						()->{Shooter.getInstance().setHoodTarget(-40);},
-						()->{Shooter.getInstance().setHoodTarget(0);}
-					),
-					Commands.startEnd(
-						()->{Shooter.getInstance().setFlywheelTarget(2000);},
-						()->{Shooter.getInstance().setFlywheelTarget(0);}
-					)
-				))
+				.whileTrue(m_driverXboxController.rightBumper(), new JoystickHeadingDrive(m_driveInputs))
 
 				.whileTrue(m_driverXboxController.povUp(), Commands.startEnd(
 					()->{Climber.getInstance().setClimberTargetAngle(5);},
@@ -140,15 +130,38 @@ public class OI {
 					return FieldUtils.getInstance().getHubPose(DriverStation.getAlliance().orElse(Alliance.Blue));
 				}))
 
+				// point blank
+				.whileTrue(m_operatorXboxController.povUp(), new ShootSpecified(3120, -1, 0))
+				// left trench
+				.whileTrue(m_operatorXboxController.povUpLeft(), new ShootSpecified(3120, -21.8, 0.13))
+				// right trench
+				.whileTrue(m_operatorXboxController.povUpRight(), new ShootSpecified(3120, -21.8, -0.35))
+
+				// ladder
+				.whileTrue(m_operatorXboxController.povDown(), new ShootSpecified(2900, -25, 0))
+				// left corner
+				.whileTrue(m_operatorXboxController.povDownLeft(), new ShootSpecified(3400, -35, -0.77))
+				// right corner
+				.whileTrue(m_operatorXboxController.povDownRight(), new ShootSpecified(3400, -35, 0.59))
+
+				// ferry
+				.whileTrue(m_operatorXboxController.a(), new ShootSpecified(4000, -35, 0))
+
 				.switchSubmap(operatorIndicator, m_operatorXboxController.start(), Submap.MANUAL)
 			.endSubmap()
 
 			.beginSubmap(Submap.MANUAL)
 				.map(m_operatorXboxController.a(), new ManualShooterControl(), Trigger::toggleOnTrue)
 
-				.onTrue(m_operatorXboxController.povLeft(), new StopTurretCalibration())
-				.onTrue(m_operatorXboxController.povRight(), new CalibrateTurretFull())
-				.onTrue(m_operatorXboxController.povDown(), new StopTurretCalibration())
+				.whileTrue(m_operatorXboxController.y(), Commands.parallel(
+					new ChimneyUp(),
+					new SpindexerSpin(),
+					new IntakeIn())
+				)
+
+				//.onTrue(m_operatorXboxController.povLeft(), new StopTurretCalibration())
+				//.onTrue(m_operatorXboxController.povRight(), new CalibrateTurretFull())
+				//.onTrue(m_operatorXboxController.povDown(), new StopTurretCalibration())
 
 				.switchSubmap(operatorIndicator, m_operatorXboxController.start(), Submap.AUTO)
 			.endSubmap()

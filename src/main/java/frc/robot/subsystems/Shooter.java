@@ -1,5 +1,9 @@
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Rotation;
+
+import java.util.Optional;
+
 import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
@@ -19,7 +23,11 @@ import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ElevatorFeedforward;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Rotation3d;
+import edu.wpi.first.math.geometry.Transform3d;
+import edu.wpi.first.math.geometry.Translation3d;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -31,6 +39,7 @@ import frc.robot.testingdashboard.TDNumber;
 import frc.robot.utils.FieldUtils;
 import frc.robot.utils.sensing.SparkCurrentLimitDetector;
 import frc.robot.utils.sensing.SparkCurrentLimitDetector.HardLimitDirection;
+import frc.robot.utils.vision.VisionEstimationResult;
 
 public class Shooter extends SubsystemBase {
     private static Shooter m_Shooter = null;
@@ -73,6 +82,8 @@ public class Shooter extends SubsystemBase {
     private SparkCurrentLimitDetector m_turretCurrentLimit;
     private double m_turretForwardHardLimit;
     private double m_turretReverseHardLimit;
+    private double m_turretForwardSoftLimit;
+    private double m_turretReverseSoftLimit;
 
     private boolean m_turretCalibrationEnabled;
     public enum TurretCalibration {
@@ -81,7 +92,6 @@ public class Shooter extends SubsystemBase {
     }
     private TurretCalibration m_turretCalibration;
     private boolean m_turretCalibratedForward;
-    private boolean m_turretCalibratedReverse;
 
     private double m_turretP;
     private double m_turretI;
@@ -106,6 +116,8 @@ public class Shooter extends SubsystemBase {
     private TDNumber m_TDturretMeasuredPosition;
     private TDNumber m_TDturretProfilePosition;
     private TDNumber m_TDturretMeasuredCurrent;
+
+    private Pose3d m_turretPose;
 
     // Hood
     private final boolean m_hoodEnabled;
@@ -259,6 +271,8 @@ public class Shooter extends SubsystemBase {
         m_turretCurrentLimit = new SparkCurrentLimitDetector(m_turretMotor, cfgDbl("turretCurrentTrip"), cfgDbl("turretZeroSpeedTolerance"));
         m_turretForwardHardLimit = cfgDbl("turretForwardHardLimit");
         m_turretReverseHardLimit = cfgDbl("turretReverseHardLimit");
+        m_turretForwardSoftLimit = m_turretForwardHardLimit - cfgDbl("turretSoftLimitWidth");
+        m_turretReverseSoftLimit = m_turretReverseHardLimit + cfgDbl("turretSoftLimitWidth");
 
         m_turretCalibrationEnabled = false;
 
@@ -282,6 +296,14 @@ public class Shooter extends SubsystemBase {
         m_TDturretMeasuredPosition = new TDNumber(this, "Turret", "Measured Position");
         m_TDturretMeasuredCurrent = new TDNumber(this, "Turret", "Measured Current");
         m_TDturretProfilePosition = new TDNumber(this, "Turret", "Profile Position");
+        
+        /*m_turretPose = new Pose3d(m_Drive.getPose()).plus(new Transform3d(new Pose3d(), new Pose3d(
+            new Translation3d(
+                cfgDbl("turretPositionX"),
+                cfgDbl("turretPositionY"),
+                cfgDbl("turretPositionZ")),
+            Rotation3d.kZero
+        )));*/
 
         double initPosition = 0;
         m_turretSetpoint = new TrapezoidProfile.State(initPosition, 0.0);
@@ -554,7 +576,7 @@ public class Shooter extends SubsystemBase {
 
                 double motion = freeMotion;// shortestMotion;
                 // fallback to free motion if shortest motion passes over limit
-                if (robotAngle + shortestMotion > m_turretForwardHardLimit || robotAngle + shortestMotion < m_turretReverseHardLimit) {
+                if (robotAngle + shortestMotion > m_turretForwardSoftLimit || robotAngle + shortestMotion < m_turretReverseSoftLimit) {
                     motion = freeMotion;
                 }
 
@@ -575,7 +597,6 @@ public class Shooter extends SubsystemBase {
     public void enableTurretCalibration(TurretCalibration mode) {
         m_turretCalibrationEnabled = true;
         m_turretCalibratedForward = false;
-        m_turretCalibratedReverse = false;
         m_turretCalibration = mode;
     }
 
@@ -596,8 +617,6 @@ public class Shooter extends SubsystemBase {
             HardLimitDirection hardLimit = m_turretCurrentLimit.check();
             if (hardLimit == HardLimitDirection.kForward) {
                 m_turretMotor.getEncoder().setPosition(m_turretForwardHardLimit);
-                m_turretCalibratedForward = true;
-                
                 m_turretMotor.set(0);
                 m_turretCalibrationEnabled = false;
             }
@@ -614,12 +633,12 @@ public class Shooter extends SubsystemBase {
                 m_turretMotor.getEncoder().setPosition(0);
                 m_turretMotor.set(-0.5);
             } else if (hardLimit == HardLimitDirection.kReverse && m_turretMotor.getEncoder().getPosition() < -Math.PI/2.0) {
-                m_turretCalibratedReverse = true;
-
                 double range = m_turretMotor.getEncoder().getPosition();
                 m_turretForwardHardLimit = -range/2.0;
                 m_turretReverseHardLimit = range/2.0;
-                System.out.println("Setting encoder to " + m_turretReverseHardLimit);
+                m_turretForwardSoftLimit = m_turretForwardHardLimit - cfgDbl("turretSoftLimitWidth");
+                m_turretReverseSoftLimit = m_turretReverseHardLimit + cfgDbl("turretSoftLimitWidth");
+
                 m_turretMotor.getEncoder().setPosition(m_turretReverseHardLimit);
                 m_turretState = new TrapezoidProfile.State(m_turretReverseHardLimit, 0);
 
@@ -675,7 +694,7 @@ public class Shooter extends SubsystemBase {
             m_TDturretSpeed.set(0);
         }
 
-        controlledAngle = MathUtil.clamp(controlledAngle, m_turretReverseHardLimit, m_turretForwardHardLimit);
+        controlledAngle = MathUtil.clamp(controlledAngle, m_turretReverseSoftLimit, m_turretForwardSoftLimit);
 
         m_turretSetpoint = new TrapezoidProfile.State(controlledAngle, m_TDturretSpeed.get());
 
@@ -688,6 +707,12 @@ public class Shooter extends SubsystemBase {
                 ClosedLoopSlot.kSlot0,
                 turretFF);
 
+        /*Optional<VisionEstimationResult> result = Vision.getInstance().getLatestFromCamera("TurretCamera");
+        if (result.isPresent()) {
+            VisionEstimationResult turretEstimation = result.get();
+
+            m_turretPose = m_turretPose.plus(new Transform3d(new Pose3d(), turretEstimation.estimatedPose.minus(m_turretPose)));
+        }*/
     }
 
     private void runHood() {

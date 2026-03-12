@@ -367,7 +367,7 @@
 
         {"varName" : "turretEnabled", "value" : true},
 
-        {"varName" : "tuneTurret", "value" : false},
+        {"varName" : "tuneTurret", "value" : true},
 
         {"varName" : "turretP", "value": 0.50},
         {"varName" : "turretI", "value": 0},
@@ -383,9 +383,7 @@
 
         {"varName" : "turretRatio", "value" : 77},
 
-        {"varName" : "turretDeadzoneStart", "value": 6.28319},
-        {"varName" : "turretHardLimit", "value" : 9.942478},
-        {"varName" : "turretSoftLimit", "value" : 9.942478},
+        {"varName" : "turretSoftLimitWidth", "value" : 0.1745},
 
         {"varName" : "turretForwardHardLimit", "value" : 3.665},
         {"varName" : "turretReverseHardLimit", "value" : -3.665},
@@ -427,7 +425,7 @@
 	],
 
 	"Climber" : [
-		{"varName" : "climberEnabled", "value" : true},
+		{"varName" : "climberEnabled", "value" : false},
         {"varName" : "climberRatio", "value" : 1},
 
         {"varName" : "tuneClimber", "value" : true},
@@ -467,8 +465,24 @@
                 "roll": 0
             },
             "primaryStrat": "MULTI_TAG_PNP_ON_COPROCESSOR",
-            "backupStrat": "CLOSEST_TO_CAMERA_HEIGHT",
+            "backupStrat": "LOWEST_AMBIGUITY",
             "includeInPoseEstimates": false
+        },
+        {
+            "name": "FrontRightCamera",
+            "translation": {
+                "x": 0.2814828,
+                "y": 0.2814828,
+                "z": 0.2055876
+            },
+            "angles": {
+                "pitch": 25,
+                "yaw": -45,
+                "roll": 0
+            },
+            "primaryStrat": "MULTI_TAG_PNP_ON_COPROCESSOR",
+            "backupStrat": "LOWEST_AMBIGUITY",
+            "includeInPoseEstimates": true
         }
 	]
 }

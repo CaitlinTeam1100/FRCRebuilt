@@ -13,12 +13,14 @@ import frc.robot.Constants;
 import frc.robot.RobotMap;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.struct.Pose3dStruct;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import frc.robot.testingdashboard.SubsystemBase;
 import frc.robot.testingdashboard.TDBoolean;
 import frc.robot.testingdashboard.TDNumber;
 import frc.robot.testingdashboard.TDSendable;
 import frc.robot.utils.Configuration;
+import frc.robot.utils.structlogging.Pose3dPublisher;
 import frc.robot.utils.vision.VisionConfig;
 import frc.robot.utils.vision.VisionEstimationResult;
 import frc.robot.utils.vision.VisionSystem;
@@ -27,6 +29,7 @@ public class Vision extends SubsystemBase {
 
   private static Vision m_vision;
   private HashMap<String, VisionSystem> m_visionSystems;
+  private HashMap<String, Pose3dPublisher> m_posePublishers;
 
   private TDNumber m_estX;
   private TDNumber m_estY;
@@ -38,12 +41,14 @@ public class Vision extends SubsystemBase {
   private Vision() {
     super("Vision");
     m_visionSystems = new HashMap<String, VisionSystem>();
+    m_posePublishers = new HashMap<String, Pose3dPublisher>();
     List<VisionConfig> myConfig = Configuration.getInstance().getVisionConfigs();
     if (myConfig != null)
     {
       for(VisionConfig config : myConfig) {
          VisionSystem system = new VisionSystem(config);
          m_visionSystems.put(config.cameraName, system);
+         m_posePublishers.put(config.cameraName, new Pose3dPublisher(config.cameraName, new Pose3dStruct()));
       }
     }
     m_estX = new TDNumber(this, "Est Pose", "Est X");
@@ -96,9 +101,11 @@ public class Vision extends SubsystemBase {
           var newest = system.updateAndGetEstimatedPose();
           newest.ifPresent(
             est -> {
+              m_posePublishers.get(entry.getKey()).set(null);
               Pose2d estPose = est.estimatedPose.toPose2d();
 
               m_field.getObject(system.getName()).setPose(estPose);
+
 
               if (system.shouldIncludeInPoseEstimates()) {
                 robotDrive.addVisionMeasurement(estPose, est.timestamp, est.stdDevs);
@@ -110,6 +117,9 @@ public class Vision extends SubsystemBase {
             }
           );
         }
+      }
+      for (Pose3dPublisher publisher : m_posePublishers.values()) {
+        publisher.post();
       }
       super.periodic();
     }
