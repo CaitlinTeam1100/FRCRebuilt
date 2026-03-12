@@ -84,11 +84,10 @@ public class ShootToPose extends Command {
         Optional<VisionEstimationResult> result = m_Vision.getLatestFromCamera(m_cameraName);
         Pose3d turretPose;
         if (result.isPresent()) {
-            turretPose = result.get().estimatedPose;
+            turretPose = m_Shooter.getTurretPose();
         } else {
             Pose3d chassisPose = new Pose3d(m_Drive.getPose());
             turretPose = chassisPose.transformBy(m_chassisToTurret);
-            return;
         }
 
         TrajectoryConditions conditions = new TrajectoryConditions();
