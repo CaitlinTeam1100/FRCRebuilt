@@ -121,6 +121,7 @@ public class Shooter extends SubsystemBase {
     private TDNumber m_TDturretMeasuredCurrent;
 
     private Pose3d m_turretPose;
+    private boolean m_turretGotResult;
 
     private boolean m_turretRobotRelative;
     private boolean m_turretControl;
@@ -312,6 +313,7 @@ public class Shooter extends SubsystemBase {
                 cfgDbl("turretPositionZ")),
             Rotation3d.kZero
         )));
+        m_turretGotResult = false;
 
         double initPosition = 0;
         m_turretSetpoint = new TrapezoidProfile.State(initPosition, 0.0);
@@ -749,6 +751,8 @@ public class Shooter extends SubsystemBase {
         Optional<VisionEstimationResult> result = Vision.getInstance().getLatestFromCamera("TurretCamera");
         if (result.isPresent()) {
             VisionEstimationResult turretEstimation = result.get();
+            
+            if (!m_turretGotResult) m_turretPose = turretEstimation.estimatedPose;
 
             double slowT = Constants.schedulerPeriodTime * 2;
             double fastT = Constants.schedulerPeriodTime * 16;
@@ -769,6 +773,8 @@ public class Shooter extends SubsystemBase {
                     m_turretPose.getRotation()).times(t));
             
             m_turretPose = new Pose3d(smoothedPosition, smoothedRotation);
+
+            m_turretGotResult = true;
         }
     }
 

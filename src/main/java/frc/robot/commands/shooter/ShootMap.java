@@ -151,13 +151,12 @@ public class ShootMap extends Command {
             double error = 0;
             turretAngle = setpoint.turret - error;
         } else {
-            Pose3d turretPose = m_Shooter.getTurretPose();
-            Translation2d turretPosition = turretPose.getTranslation().toTranslation2d();
             Rotation2d angle;
-            if (m_target == Target.SHOOT_HUB)
-                angle = turretPosition.minus(FieldUtils.getInstance().getHubPose(m_alliance).getTranslation().toTranslation2d()).getAngle();
-            else
-                angle = Rotation2d.kZero;
+            if (m_target == Target.SHOOT_HUB) {
+                Pose3d turretPose = m_Shooter.getTurretPose();
+                Pose3d hubPose = FieldUtils.getInstance().getHubPose(m_alliance);
+                angle = FieldUtils.getInstance().getAngleToPose(turretPose.toPose2d(), hubPose.toPose2d());
+            } else angle = m_alliance == Alliance.Blue ? Rotation2d.kZero : Rotation2d.k180deg;
             turretAngle = angle.getRadians();
         }
 
