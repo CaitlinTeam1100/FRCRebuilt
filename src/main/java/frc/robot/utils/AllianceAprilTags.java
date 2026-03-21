@@ -51,7 +51,7 @@ public class AllianceAprilTags {
         this.backLeftTrench = backLeftTrench;
         this.backRightTrench = backRightTrench;
         this.frontLeftHub = frontLeftHub;
-        this.frontRightHub = frontLeftHub;
+        this.frontRightHub = frontRightHub;
         this.leftLeftHub = leftLeftHub;
         this.leftRightHub = leftRightHub;
         this.rightLeftHub = rightLeftHub;
