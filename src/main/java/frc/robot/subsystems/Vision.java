@@ -65,7 +65,7 @@ public class Vision extends SubsystemBase {
     m_field.setRobotPose(-10, 0, Rotation2d.kZero);
     new TDSendable(this, "Field", "Vision Field", m_field);
 
-    m_poseUpdatesEnabled = new TDBoolean(this, "", "Pose Updates Enabled", false);
+    m_poseUpdatesEnabled = new TDBoolean(this, "", "Pose Updates Enabled", true);
   }
 
   public static Vision getInstance(){
