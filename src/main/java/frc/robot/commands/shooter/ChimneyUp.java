@@ -9,7 +9,7 @@ public class ChimneyUp extends Command {
 	public ChimneyUp() {
 		super(Shooter.getInstance(), "Chimney", "ChimneyUp");
 		m_Shooter = Shooter.getInstance();
-		addRequirements(m_Shooter);
+		//addRequirements(m_Shooter);
 	}
 
 	@Override

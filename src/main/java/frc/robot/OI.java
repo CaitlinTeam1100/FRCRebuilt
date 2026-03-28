@@ -133,18 +133,12 @@ public class OI {
 		SwitchIndicator operatorIndicator = new RumbleIndicator(m_operatorXboxController.getHID());
 		new TriggerBuilder<Submap>(m_operatorSubmap)
 			.beginSubmap(Submap.AUTO)
-				.whileTrue(m_operatorXboxController.rightBumper(), Commands.parallel(
-					new ChimneyUp(),
-					new SpindexerSpin()
-				))
+				.whileTrue(m_operatorXboxController.rightBumper(), new SpindexerSpin())
 
-				.whileTrue(m_operatorXboxController.leftBumper(), Commands.parallel(
-					new ChimneyDown(),
-					new SpindexerReverse()
-				))
+				.whileTrue(m_operatorXboxController.leftBumper(), new SpindexerReverse())
 
 				// midfield
-				.whileTrue(m_operatorXboxController.povUp(), new ShootMap(
+				/*.whileTrue(m_operatorXboxController.povUp(), new ShootMap(
 					new ShootMap.ShootMapSetpoint(new Pose2d(new Translation2d(2.5,4), Rotation2d.kZero), 3000, -18, 0),
 					new ShootMap.ShootMapSetpoint(new Pose2d(new Translation2d(2.5,4), Rotation2d.kZero), 3000, -18, 0),
 					Alliance.Blue,
@@ -214,7 +208,9 @@ public class OI {
 					new ShootMap.ShootMapSetpoint(new Pose2d(Translation2d.kZero, Rotation2d.kZero), 4500, -40, -Math.PI/2),
 					Alliance.Blue,
 					ShootMap.Target.FERRY
-				))
+				))*/
+
+				.whileTrue(m_operatorXboxController.a(), new ShootToPose(FieldUtils.getInstance()::getHubPose))
 
 				.switchSubmap(operatorIndicator, m_operatorXboxController.start(), Submap.MANUAL)
 			.endSubmap()

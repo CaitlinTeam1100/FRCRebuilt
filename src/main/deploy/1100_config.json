@@ -368,7 +368,10 @@
 		{"varName" : "flywheelEnabled", "value" : true},
 
         {"varName" : "tuneFlywheel", "value": false},
-        {"varName" : "flywheelP", "value": 0.00005},
+
+        {"varName" : "flywheelTolerance", "value" : 500},
+
+        {"varName" : "flywheelP", "value": 0.0005},
         {"varName" : "flywheelI", "value": 0},
         {"varName" : "flywheelD", "value": 0.0002},
 
@@ -383,6 +386,8 @@
         {"varName" : "tuneTurret", "value" : false},
 
         {"varName" : "turretRobotRelative", "value" : false},
+
+        {"varName" : "turretTolerance", "value" : 0.05},
 
         {"varName" : "turretP", "value": 0.5},
         {"varName" : "turretI", "value": 0},
@@ -414,7 +419,7 @@
 
 		{"varName" : "hoodEnabled", "value" : true},
 
-        {"varName" : "tuneHood", "value" : true},
+        {"varName" : "tuneHood", "value" : false},
 
         {"varName" : "hoodKg", "value" : -0.1},
         {"varName" : "hoodKs", "value" : 0.01},
@@ -423,13 +428,13 @@
         {"varName" : "hoodI", "value" : 0},
         {"varName" : "hoodD", "value" : 0},
 
-        {"varName" : "hoodGearRatioNumerator", "value" : 3},
-        {"varName" : "hoodGearRatioDenominator", "value" : 1024},
+        {"varName" : "hoodGearRatioNumerator", "value" : 0.00357303279023235},
+        {"varName" : "hoodGearRatioDenominator", "value" : 1},
 
         {"varName" : "hoodMotorFreeSpeed", "value" : 5676},
         {"varName" : "hoodMaxAcceleration", "value" : 720},
         {"varName" : "hoodMaxAngle", "value" : 0},
-        {"varName" : "hoodMinAngle", "value": -40},
+        {"varName" : "hoodMinAngle", "value": -35},
         {"varName" : "hoodAngleOffset", "value" : 10},
         {"varName" : "hoodTolerance", "value" : 0.5},
 

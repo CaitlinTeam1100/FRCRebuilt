@@ -123,7 +123,7 @@ public class FieldUtils{
 
     public Pose3d getHubPose() {
         Transform3d tagToHub = new Transform3d(
-            new Translation3d(-Units.inchesToMeters(23.5), 0, 0), Rotation3d.kZero);
+            new Translation3d(-Units.inchesToMeters(23.5), 0, Units.inchesToMeters(18.0)), Rotation3d.kZero);
         return getTagPose(getAllianceAprilTags().frontRightHub).transformBy(tagToHub);
     }
 

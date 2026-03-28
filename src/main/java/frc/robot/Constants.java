@@ -20,6 +20,7 @@ public final class Constants {
     static final Configuration config = Configuration.getInstance();
     public static final String robotName = "robot360";
     public static final double schedulerPeriodTime = 0.02;
+    public static final boolean enableTDNumbers = false;
 
     public static final class SwerveModuleConstants {
         public static final boolean kTurningEncoderInverted = true;
@@ -158,7 +159,7 @@ public final class Constants {
         public static final double kHoodMaxAngle = Configuration.getInstance().getDouble("Shooter", "hoodMaxAngle");
         public static final double kHoodMinAngle = Configuration.getInstance().getDouble("Shooter", "hoodMinAngle");
         public static final double kHoodAngleOffset = Configuration.getInstance().getDouble("Shooter", "hoodAngleOffset");
-        public static final double kHoodToleranceDegrees = 1.0;
+        public static final double kHoodToleranceDegrees = 0.1;
 
         public static final double kTurretPlanetaryRatio = Configuration.getInstance().getDouble("Shooter", "turretPlanetaryRatio");
         public static final double kTurretPinionTeeth = Configuration.getInstance().getDouble("Shooter", "turretPinionTeeth");
@@ -172,6 +173,19 @@ public final class Constants {
         public static final double kBasicShooterRPM = 2000;
 
         public static final double kChimneySpeed = 1.0;
+
+        public static final boolean kVelocityMapQuadratic = false;
+
+        public static final double kVelocityQuadTermA = -1.38783676087633866e-7;
+        public static final double kVelocityQuadTermB =  3.08206828359486795e-3;
+        public static final double kVelocityQuadTermC =  9.78677085670659030e-1;
+
+        // values for 45 degrees (farther from hub)
+        public static final double kVelocityLinTermM_45 = 0.00185;
+        public static final double kVelocityLinTermB_45 = 2.18;
+        // values for 65 degrees (closer to hub)
+        public static final double kVelocityLinTermM_65 = 0.00165;
+        public static final double kVelocityLinTermB_65 = 1.235;
     }
 
     public static final class OIConstants {

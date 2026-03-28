@@ -19,6 +19,7 @@ import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
+import edu.wpi.first.math.InterpolatingMatrixTreeMap;
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ElevatorFeedforward;
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
@@ -29,18 +30,24 @@ import edu.wpi.first.math.geometry.Rotation3d;
 import edu.wpi.first.math.geometry.Transform3d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.geometry.Translation3d;
+import edu.wpi.first.math.interpolation.InterpolatingDoubleTreeMap;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N2;
 import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import frc.robot.Constants;
+import frc.robot.Constants.ShooterConstants;
 import frc.robot.testingdashboard.SubsystemBase;
 import frc.robot.testingdashboard.TDNumber;
 import frc.robot.testingdashboard.TDSendable;
 import frc.robot.utils.FieldUtils;
 import frc.robot.utils.SwerveTurretPoseEstimator3d;
+import frc.robot.utils.TrajectorySolver.TrajectoryConditions;
+import frc.robot.utils.TrajectorySolver.TrajectoryParameters;
 import frc.robot.utils.sensing.SparkCurrentLimitDetector;
 import frc.robot.utils.sensing.SparkCurrentLimitDetector.HardLimitDirection;
 import frc.robot.utils.vision.VisionEstimationResult;
@@ -69,6 +76,11 @@ public class Shooter extends SubsystemBase {
     private boolean m_tuneFlywheel;
 
     private SimpleMotorFeedforward m_flywheelFF;
+
+    // private TDNumber m_TDflywheelLinTermM;
+    // private TDNumber m_TDflywheelLinTermB;
+    private InterpolatingDoubleTreeMap m_flywheelVelocityTermsM;
+    private InterpolatingDoubleTreeMap m_flywheelVelocityTermsB;
 
     private TDNumber m_TDflywheelVelocity;
     private TDNumber m_TDflywheelMeasuredVelocity;
@@ -126,6 +138,8 @@ public class Shooter extends SubsystemBase {
     Field2d m_turretPoseField;
     private Pose3d m_turretPose;
     private boolean m_turretGotResult;
+
+    private Field2d m_trajectoryDisplay;
 
     private boolean m_turretRobotRelative;
     private boolean m_turretControl;
@@ -234,7 +248,9 @@ public class Shooter extends SubsystemBase {
         m_flywheelLeftConfig = flywheelLeftMotorConfig.m_config;
         m_flywheelLeftConfig.closedLoop.pid(m_flywheelP, m_flywheelI, m_flywheelD);
         m_flywheelLeftConfig.encoder
-            .velocityConversionFactor(cfgDbl("flywheelVelocityFactor"));
+            .velocityConversionFactor(cfgDbl("flywheelVelocityFactor"))
+            .quadratureAverageDepth(8)
+            .quadratureMeasurementPeriod(25);
 
         m_flywheelLeftMotor.configure(m_flywheelLeftConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
@@ -250,6 +266,18 @@ public class Shooter extends SubsystemBase {
 
         m_TDflywheelVelocity = new TDNumber(this, "Flywheel", "Target Velocity");
         m_TDflywheelVelocity.set(0);
+
+        // m_TDflywheelLinTermM = new TDNumber(this, "VelocityMapping", "TermM", true);
+        // m_TDflywheelLinTermM.set(ShooterConstants.kVelocityLinTermM_45);
+        // m_TDflywheelLinTermB = new TDNumber(this, "VelocityMapping", "TermB", true);
+        // m_TDflywheelLinTermB.set(ShooterConstants.kVelocityLinTermB_45);
+
+        m_flywheelVelocityTermsM = new InterpolatingDoubleTreeMap();
+        m_flywheelVelocityTermsB = new InterpolatingDoubleTreeMap();
+        m_flywheelVelocityTermsM.put(Math.toRadians(45), ShooterConstants.kVelocityLinTermM_45);
+        m_flywheelVelocityTermsB.put(Math.toRadians(45), ShooterConstants.kVelocityLinTermB_45);
+        m_flywheelVelocityTermsM.put(Math.toRadians(65), ShooterConstants.kVelocityLinTermM_65);
+        m_flywheelVelocityTermsB.put(Math.toRadians(65), ShooterConstants.kVelocityLinTermB_65);
 
         m_TDflywheelMeasuredVelocity = new TDNumber(this, "Flywheel", "Measured Velocity");
         m_TDflywheelMeasuredCurrent = new TDNumber(this, "Flywheel", "Measured Current");
@@ -339,7 +367,6 @@ public class Shooter extends SubsystemBase {
         } else {
             System.out.println("WARNING: Turret Vision System does not exist, turret localization may not work");
         }
-        
 
         m_turretPoseEstimator = new SwerveTurretPoseEstimator3d(
             Constants.DriveConstants.kinematics, 
@@ -352,6 +379,10 @@ public class Shooter extends SubsystemBase {
 
         m_turretPoseField = new Field2d();
         new TDSendable(this, "Field", "Turret Position", m_turretPoseField);
+
+        m_trajectoryDisplay = new Field2d();
+        m_trajectoryDisplay.setRobotPose(-10, 0, Rotation2d.kZero);
+        new TDSendable(this, "Field", "Trajectory Display", m_trajectoryDisplay);
     }
 
     private void setupHood() {
@@ -437,6 +468,8 @@ public class Shooter extends SubsystemBase {
      *            Velocity to approach in RPM.
      */
     public void setFlywheelTarget(double rpm) {
+        if (!m_flywheelEnabled) return;
+
         m_TDflywheelVelocity.set(rpm);
     }
 
@@ -447,6 +480,8 @@ public class Shooter extends SubsystemBase {
      *            Position to approach in radians.
      */
     public void setHoodTarget(double angle) {
+        if (!m_hoodEnabled) return;
+
         double clampedAngle = MathUtil.clamp(angle,
                 Constants.ShooterConstants.kHoodMinAngle,
                 Constants.ShooterConstants.kHoodMaxAngle);
@@ -463,6 +498,8 @@ public class Shooter extends SubsystemBase {
      *            Speed to move target angle by in radians/second.
      */
     public void setTurretTarget(double targetAngle, double speed) {
+        if (!m_turretEnabled) return;
+
         m_TDturretTargetAngle.set(targetAngle);
         m_TDturretSpeed.set(speed);
     }
@@ -490,13 +527,20 @@ public class Shooter extends SubsystemBase {
                 m_turretTolerance);
     }
 
+    public double getFlywheelTarget() {
+        return m_TDflywheelVelocity.get();
+    }
+
     public boolean flywheelAtTarget() {
         return MathUtil.isNear(m_TDflywheelVelocity.get(), m_turretMotor.getEncoder().getVelocity(),
                 cfgDbl("flywheelTolerance"));
     }
 
-    public void resetTurretEstimatorPose(Pose3d newPose)
-    {
+    public double getHoodTarget() {
+        return m_TDhoodTargetPosition.get();
+    }
+
+    public void resetTurretEstimatorPose(Pose3d newPose) {
         double angle = Math.toRadians(m_Drive.getGyroAngle());
         m_turretPoseEstimator.resetPosition(
             new Rotation3d(0,0,angle),
@@ -512,6 +556,25 @@ public class Shooter extends SubsystemBase {
         return MathUtil.isNear(m_TDhoodTargetPosition.get(), m_hoodMotor.getEncoder().getPosition(), m_hoodTolerance);
     }
 
+    public void updateTrajectoryDisplay(TrajectoryConditions conditions, TrajectoryParameters params) {
+        int res = 32;
+        for (int i = 0; i < res; i++) {
+            double t = i/(double)(res-1);
+            Translation3d inter = conditions.start.getTranslation()
+                .interpolate(conditions.target.getTranslation(), t);
+            Pose2d pose = new Pose2d(inter.toTranslation2d(), Rotation2d.kZero);
+            m_trajectoryDisplay.getObject("point" + i).setPose(pose);
+        }
+    }
+
+    public void clearTrajectoryDisplay() {
+        int res = 32;
+        m_trajectoryDisplay.setRobotPose(-10,0,Rotation2d.kZero);
+        for (int i = 0; i < res; i++) {
+            m_trajectoryDisplay.getObject("point" + i).setPose(-10,0,Rotation2d.kZero);
+        }
+    }
+
     /**
      * Gets a hood angle needed to throw the ball at a given pitch
      * 
@@ -520,9 +583,17 @@ public class Shooter extends SubsystemBase {
      * @return Valid hood angle in degrees
      */
     public double pitchToHood(double angle) {
-        double tranlatedAngle = angle - Math.PI;
-        double degs = Math.toDegrees(tranlatedAngle) + Constants.ShooterConstants.kHoodAngleOffset;
+        double tranlatedAngle = Math.PI/2 - angle;
+        double degs = Math.toDegrees(-tranlatedAngle) + Constants.ShooterConstants.kHoodAngleOffset;
         return MathUtil.clamp(degs, Constants.ShooterConstants.kHoodMinAngle, Constants.ShooterConstants.kHoodMaxAngle);
+    }
+
+    public double hoodToPitch(double hood) {
+        // deg = rtod(-pi/2 + angle) + offset
+        // deg - offset = rtod(-pi/2 + angle)
+        // dtor(deg - offset) = -pi/2 + angle
+        // dtor(deg - offset) + pi/2 = angle
+        return Math.toRadians(hood - Constants.ShooterConstants.kHoodAngleOffset) + Math.PI/2;
     }
 
     /**
@@ -532,9 +603,36 @@ public class Shooter extends SubsystemBase {
      *            Field velocity in m/s
      * @return Flywheel velocity in RPM
      */
-    public double velocityToRPM(double velocity) {
-        // TODO: implement velocity to RPM conversion
-        return 0;
+    public double velocityToRPM(double velocity, double angle) {
+        if (ShooterConstants.kVelocityMapQuadratic) {
+            final double a = ShooterConstants.kVelocityQuadTermA;
+            final double b = ShooterConstants.kVelocityQuadTermB;
+            final double c = ShooterConstants.kVelocityQuadTermC;
+
+            final double rpm = (-b + Math.sqrt(b*b - 4*a*(c-velocity)))/(2*a);
+            return Math.max(rpm, 0);
+        } else {
+            final double m = m_flywheelVelocityTermsM.get(angle);
+            final double b = m_flywheelVelocityTermsB.get(angle);
+
+            final double rpm = (velocity - b)/m;
+            return Math.max(rpm, 0);
+        }
+    }
+
+    public double RPMtoVelocity(double rpm, double angle) {
+        if (ShooterConstants.kVelocityMapQuadratic) {
+            final double a = ShooterConstants.kVelocityQuadTermA;
+            final double b = ShooterConstants.kVelocityQuadTermB;
+            final double c = ShooterConstants.kVelocityQuadTermC;
+
+            return a*rpm*rpm + b*rpm + c;
+        } else {
+            final double m = m_flywheelVelocityTermsM.get(angle);
+            final double b = m_flywheelVelocityTermsB.get(angle);
+            
+            return m*rpm + b;
+        }
     }
 
     // see angleToTarget for more info
@@ -804,7 +902,7 @@ public class Shooter extends SubsystemBase {
             m_turretPoseEstimator.addVisionMeasurement(result.get().estimatedPose, result.get().timestamp);
 
             VisionEstimationResult turretEstimation = result.get();
-            
+
             if (!m_turretGotResult) m_turretPose = turretEstimation.estimatedPose;
 
             double slowT = Constants.schedulerPeriodTime * 2;
@@ -831,6 +929,7 @@ public class Shooter extends SubsystemBase {
         }
 
         m_turretPoseField.setRobotPose(m_turretPoseEstimator.getEstimatedPosition().toPose2d());
+        m_turretPoseField.getObject("Hub").setPose(FieldUtils.getInstance().getHubPose().toPose2d());
     }
 
     private void runHood() {
@@ -856,12 +955,7 @@ public class Shooter extends SubsystemBase {
         }
         HardLimitDirection limit = m_hoodLimiter.check();
         double hoodAngle = m_hoodEncoder.getPosition();
-        if (limit == HardLimitDirection.kFree) {
-            m_hoodState = m_hoodProfile.calculate(Constants.schedulerPeriodTime, m_hoodState, m_hoodSetpoint);
-            double hoodFeedForward = m_hoodFF.calculate(m_hoodState.velocity);
-            m_hoodClosedLoopController.setSetpoint(m_hoodState.position, ControlType.kPosition, ClosedLoopSlot.kSlot0,
-                    hoodFeedForward);
-        } else if (limit == HardLimitDirection.kForward) {
+        if (limit == HardLimitDirection.kForward) {
             if (m_hoodMotor.getAppliedOutput() > 0) {
                 m_hoodMotor.set(0);
             }
@@ -886,6 +980,11 @@ public class Shooter extends SubsystemBase {
                 m_hoodSetpoint = new TrapezoidProfile.State(Constants.ShooterConstants.kHoodMinAngle, 0.0);
             }
         }
+
+        m_hoodState = m_hoodProfile.calculate(Constants.schedulerPeriodTime, m_hoodState, m_hoodSetpoint);
+        double hoodFeedForward = m_hoodFF.calculate(m_hoodState.velocity);
+        m_hoodClosedLoopController.setSetpoint(m_hoodState.position, ControlType.kPosition, ClosedLoopSlot.kSlot0,
+                hoodFeedForward);
 
         m_TDHoodPosition.set(hoodAngle);
         m_TDHoodProfilePosition.set(m_hoodState.position);

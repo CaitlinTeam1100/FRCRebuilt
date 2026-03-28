@@ -67,6 +67,7 @@ public class StructLogger implements AutoCloseable {
 
         m_print = false;
 
+        DataLogManager.logNetworkTables(false);
         DataLogManager.start();
         m_dataLog = DataLogManager.getLog();
         m_dataLog.addSchema(m_struct);
@@ -141,8 +142,8 @@ public class StructLogger implements AutoCloseable {
     }
 
     public void post() {
-        if (m_sendType == SendType.PROTOBUF) postProtobuf();
-        else postStruct();
+        //if (m_sendType == SendType.PROTOBUF) postProtobuf();
+        //else postStruct();
     }
 
     public void setStruct(StructSerializable value) {
@@ -153,6 +154,14 @@ public class StructLogger implements AutoCloseable {
     public void setProtobuf(ProtobufSerializable value) {
         if (m_protobufCurrentValue == null || m_protobufCurrentValue.getClass().isAssignableFrom(value.getClass()))
             m_protobufCurrentValue = value;
+    }
+
+    public StructSerializable getStruct() {
+        return m_structCurrentValue;
+    }
+
+    public ProtobufSerializable getProtobuf() {
+        return m_protobufCurrentValue;
     }
 
     public void setPrint(boolean print) {

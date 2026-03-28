@@ -130,8 +130,6 @@ public class VisionSystem {
                 if (valid) {
                     Matrix<N3,N1> stdDevs = getEstimationStdDevs(est.estimatedPose.toPose2d());
                     result = Optional.of(new VisionEstimationResult(est.estimatedPose, latestTimestamp, ambiguity, stdDevs, latestResult));
-                } else {
-                    System.out.println("invalid: " + m_camera.getName());
                 }
             }
         }
