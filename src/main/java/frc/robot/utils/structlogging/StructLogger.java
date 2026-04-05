@@ -1,6 +1,7 @@
 package frc.robot.utils.structlogging;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 import org.photonvision.proto.Photon;
 import org.photonvision.targeting.PhotonPipelineResult;
@@ -78,7 +79,7 @@ public class StructLogger implements AutoCloseable {
 
         m_print = false;
 
-        DataLogManager.logNetworkTables(false);
+        // DataLogManager.logNetworkTables(false);
         DataLogManager.start();
         m_dataLog = DataLogManager.getLog();
         m_dataLog.addSchema(m_struct);
@@ -169,8 +170,10 @@ public class StructLogger implements AutoCloseable {
 
         if (m_dataLog != null) {
             ByteBuffer bb = ByteBuffer.allocate(m_struct.getSize());
+            bb.order(ByteOrder.LITTLE_ENDIAN);
             m_struct.pack(bb, m_structCurrentValue);
-            m_dataLog.appendRaw(m_dataLogEntry, bb, 0);
+            bb.position(0);
+            m_dataLog.appendRaw(m_dataLogEntry, bb.array(), 0);
         }
     }
 
@@ -201,6 +204,7 @@ public class StructLogger implements AutoCloseable {
 
         if (m_dataLog != null) {
             ByteBuffer bb = ByteBuffer.allocate(m_struct.getSize() * m_structArrayCurrentValue.length);
+            bb.order(ByteOrder.LITTLE_ENDIAN);
             Struct.packArray(bb, m_structArrayCurrentValue, m_struct);
             m_dataLog.appendRaw(m_dataLogEntry, bb, 0);
         }

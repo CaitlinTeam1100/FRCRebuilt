@@ -136,12 +136,12 @@ public class OI {
 		SwitchIndicator operatorIndicator = new RumbleIndicator(m_operatorXboxController.getHID());
 		new TriggerBuilder<Submap>(m_operatorSubmap)
 			.beginSubmap(Submap.AUTO)
-				.whileTrue(m_operatorXboxController.rightBumper(), new SpindexerSpin())
+				.whileTrue(m_operatorXboxController.rightBumper(), Commands.parallel(new SpindexerSpin(), new ChimneyUp()))
 
-				.whileTrue(m_operatorXboxController.leftBumper(), new SpindexerReverse())
+				.whileTrue(m_operatorXboxController.leftBumper(), Commands.parallel(new SpindexerReverse(), new ChimneyDown()))
 
 				// midfield
-				/*.whileTrue(m_operatorXboxController.povUp(), new ShootMap(
+				.whileTrue(m_operatorXboxController.povUp(), new ShootMap(
 					new ShootMap.ShootMapSetpoint(new Pose2d(new Translation2d(2.5,4), Rotation2d.kZero), 3000, -18, 0),
 					new ShootMap.ShootMapSetpoint(new Pose2d(new Translation2d(2.5,4), Rotation2d.kZero), 3000, -18, 0),
 					Alliance.Blue,
@@ -192,26 +192,26 @@ public class OI {
 					ShootMap.Target.FERRY
 				))
 				// ferry clockwise 90
-				.whileTrue(m_operatorXboxController.b(), new ShootMap(
+				/*.whileTrue(m_operatorXboxController.b(), new ShootMap(
 					new ShootMap.ShootMapSetpoint(new Pose2d(Translation2d.kZero, Rotation2d.kCW_90deg), 6000, -40, Math.PI/2),
 					new ShootMap.ShootMapSetpoint(new Pose2d(Translation2d.kZero, Rotation2d.kCW_90deg), 6000, -40, Math.PI/2),
-					Alliance.Blue,
-					ShootMap.Target.FERRY
-				))
-				// ferry counter clockwise 90
-				.whileTrue(m_operatorXboxController.x(), new ShootMap(
-					new ShootMap.ShootMapSetpoint(new Pose2d(Translation2d.kZero, Rotation2d.kCCW_90deg), 6000, -40, -Math.PI/2),
-					new ShootMap.ShootMapSetpoint(new Pose2d(Translation2d.kZero, Rotation2d.kCCW_90deg), 6000, -40, -Math.PI/2),
-					Alliance.Blue,
-					ShootMap.Target.FERRY
-				))
-				// low power loser ferry
-				.whileTrue(m_operatorXboxController.a(), new ShootMap(
-					new ShootMap.ShootMapSetpoint(new Pose2d(Translation2d.kZero, Rotation2d.kZero), 4500, -40, -Math.PI/2),
-					new ShootMap.ShootMapSetpoint(new Pose2d(Translation2d.kZero, Rotation2d.kZero), 4500, -40, -Math.PI/2),
 					Alliance.Blue,
 					ShootMap.Target.FERRY
 				))*/
+				// ferry counter clockwise 90
+				/*.whileTrue(m_operatorXboxController.x(), new ShootMap(
+					new ShootMap.ShootMapSetpoint(new Pose2d(Translation2d.kZero, Rotation2d.kCCW_90deg), 6000, -40, -Math.PI/2),
+					new ShootMap.ShootMapSetpoint(new Pose2d(Translation2d.kZero, Rotation2d.kCCW_90deg), 6000, -40, -Math.PI/2),
+					Alliance.Blue,
+					ShootMap.Target.FERRY
+				))*/
+				// low power loser ferry
+				.whileTrue(m_operatorXboxController.b(), new ShootMap(
+					new ShootMap.ShootMapSetpoint(new Pose2d(Translation2d.kZero, Rotation2d.kZero), 4500, -40, -Math.PI/2),
+					new ShootMap.ShootMapSetpoint(new Pose2d(Translation2d.kZero, Rotation2d.kZero), 4500, -40, -Math.PI/2),
+					Alliance.Blue,
+					ShootMap.Target.FERRY
+				))
 
 				.whileTrue(m_operatorXboxController.a(), new ShootToPose(FieldUtils.getInstance()::getHubPose))
 

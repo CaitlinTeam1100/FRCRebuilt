@@ -129,6 +129,8 @@ public class ShootMap extends Command {
 
     @Override
     public void execute() {
+        m_Shooter.setTurretRobotRelative(true);
+
         Pose2d pose = m_Drive.getPose();
         pose = clampToPoints(pose);
 
@@ -171,6 +173,7 @@ public class ShootMap extends Command {
     public void end(boolean interrupted) {
         m_Shooter.setHoodTarget(0);
         m_Shooter.setFlywheelTarget(0);
+        m_Shooter.setTurretRobotRelative(false);
     }
 
     @Override
