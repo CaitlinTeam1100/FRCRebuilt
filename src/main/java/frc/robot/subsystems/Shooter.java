@@ -135,6 +135,7 @@ public class Shooter extends SubsystemBase {
     private TDNumber m_TDturretMeasuredCurrent;
 
     SwerveTurretPoseEstimator3d m_turretPoseEstimator;
+    private final Transform3d m_robotToTurret;
     Field2d m_turretPoseField;
     private Pose3d m_turretPose;
     private boolean m_turretGotResult;
@@ -193,6 +194,7 @@ public class Shooter extends SubsystemBase {
 
     private Shooter() {
         super("Shooter");
+        m_robotToTurret = new Transform3d(cfgDbl("turretPositionX"), cfgDbl("turretPositionY"), cfgDbl("turretPositionZ"), Rotation3d.kZero);
 
         m_flywheelEnabled = cfgBool("flywheelEnabled");
         m_turretEnabled = cfgBool("turretEnabled");
@@ -367,7 +369,7 @@ public class Shooter extends SubsystemBase {
             new Rotation2d(m_turretMotor.getEncoder().getPosition()),
             m_Drive.getModulePositions(), 
             new Pose3d(),
-            new Transform3d(cfgDbl("turretPositionX"), cfgDbl("turretPositionY"), cfgDbl("turretPositionZ"), Rotation3d.kZero));
+            m_robotToTurret);
 
         m_turretPoseField = new Field2d();
         new TDSendable(this, "Field", "Turret Position", m_turretPoseField);
@@ -530,6 +532,10 @@ public class Shooter extends SubsystemBase {
 
     public double getHoodTarget() {
         return m_TDhoodTargetPosition.get();
+    }
+
+    public Transform3d getTurretOffset() {
+        return m_robotToTurret;
     }
 
     public void resetTurretEstimatorPose(Pose3d newPose) {
@@ -948,7 +954,9 @@ public class Shooter extends SubsystemBase {
             }
         }
 
-        m_hoodState = m_hoodProfile.calculate(Constants.schedulerPeriodTime, m_hoodState, m_hoodSetpoint);
+        TrapezoidProfile.State controlledSetpoint = trenchOverride();
+
+        m_hoodState = m_hoodProfile.calculate(Constants.schedulerPeriodTime, m_hoodState, controlledSetpoint);
         double hoodFeedForward = m_hoodFF.calculate(m_hoodState.velocity);
         m_hoodClosedLoopController.setSetpoint(m_hoodState.position, ControlType.kPosition, ClosedLoopSlot.kSlot0,
                 hoodFeedForward);
@@ -956,6 +964,19 @@ public class Shooter extends SubsystemBase {
         m_TDHoodPosition.set(hoodAngle);
         m_TDHoodProfilePosition.set(m_hoodState.position);
         m_TDHoodMotorCurrent.set(m_hoodMotor.getOutputCurrent());
+    }
+
+    private TrapezoidProfile.State trenchOverride()
+    {
+        double robotXVelocity = m_Drive.getMeasuredFieldRelativeSpeeds().vxMetersPerSecond;
+        if(FieldUtils.getInstance().inTrenchZone(getTurretPose().toPose2d(), robotXVelocity))
+        {
+            return new TrapezoidProfile.State(0,0);
+        }
+        else
+        {
+            return m_hoodSetpoint;
+        }
     }
 
     @Override

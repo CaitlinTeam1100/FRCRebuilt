@@ -325,6 +325,10 @@ public class Drive extends SubsystemBase {
     }
   }
 
+  public ChassisSpeeds getMeasuredFieldRelativeSpeeds(){
+    return ChassisSpeeds.fromRobotRelativeSpeeds(getMeasuredSpeeds(), getPose().getRotation());
+  }
+
   /**
    * Updates pose estimator with estimate from the Vision subsystem.
    * 

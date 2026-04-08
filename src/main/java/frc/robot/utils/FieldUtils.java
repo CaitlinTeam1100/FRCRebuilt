@@ -207,5 +207,45 @@ public class FieldUtils{
         if (matchTime<130) return 130-matchTime;
         return 160-matchTime;
     }
-    
+
+    public boolean inTrenchZone(Pose2d robotPose, double xVelocity)
+    {
+        double redTrenchZoneMin = c_fieldLength - c_trenchToDriverStationM - c_trenchZoneBaseWidthMeters;
+        double redTrenchZoneMax = c_fieldLength - c_trenchToDriverStationM + c_trenchZoneBaseWidthMeters;
+        double blueTrenchZoneMin = c_trenchToDriverStationM - c_trenchZoneBaseWidthMeters;
+        double blueTrenchZoneMax = c_trenchToDriverStationM + c_trenchZoneBaseWidthMeters;
+
+        if(xVelocity > 0)
+        {
+            blueTrenchZoneMin -= (xVelocity * c_trenchZoneVelocityScaling);
+            redTrenchZoneMin -= (xVelocity * c_trenchZoneVelocityScaling);
+        }
+        else
+        {
+            blueTrenchZoneMax += (Math.abs(xVelocity) * c_trenchZoneVelocityScaling);
+            redTrenchZoneMax += (Math.abs(xVelocity) * c_trenchZoneVelocityScaling);
+        }
+
+        double x = robotPose.getX();
+        double y = robotPose.getY();
+        return (
+            (
+                (x > redTrenchZoneMin && x < redTrenchZoneMax)
+                || (x > blueTrenchZoneMin && x < blueTrenchZoneMax)
+            ) &&
+            (
+                (y < c_trenchWidthMeters)
+                || ( y > c_fieldWidth - c_trenchWidthMeters)
+            )
+        );
+    }
+
+    // Designates how wide of an area around the trench we want to designate as the "trench zone"
+    private final double c_trenchZoneBaseWidthMeters = 0.25;
+    private final double c_trenchZoneVelocityScaling = 0.75;
+
+    private final double c_fieldLength = Constants.VisionConstants.kTagLayout.getFieldLength();
+    private final double c_fieldWidth = Constants.VisionConstants.kTagLayout.getFieldWidth();
+    private final double c_trenchWidthMeters = Units.inchesToMeters(62.65); 
+    private final double c_trenchToDriverStationM = Units.inchesToMeters(182.11);
 }

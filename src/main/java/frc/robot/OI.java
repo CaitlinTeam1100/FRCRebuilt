@@ -79,7 +79,7 @@ public class OI {
             xInput = m_driverXboxController::getLeftY;
             yInput = m_driverXboxController::getLeftX;
         } else {
-            xInput = m_driverXboxController::getLeftX;
+            xInput = ()->-m_driverXboxController.getLeftX();
             yInput = m_driverXboxController::getLeftY;
         }
         m_driveInputs = new SwerveDriveInputs(xInput, yInput, m_driverXboxController::getRightX);
